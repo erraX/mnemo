@@ -7,7 +7,7 @@ export interface Token {
   isWord: boolean
 }
 
-const WORD = /[A-Za-z0-9\u00C0-\u024F''-]+/y
+const WORD = /[A-Za-z0-9\u00C0-\u024F'\u2019-]+/y
 
 export function tokenize(text: string): Token[] {
   const out: Token[] = []

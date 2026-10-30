@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { detectBlanks, looseMatch, segments, toggleBlank, tokenize } from './cloze'
 
 describe('tokenize', () => {
+  it('keeps curly apostrophes (U+2019) inside words', () => {
+    expect(tokenize('I don\u2019t know').map((x) => x.text)).toEqual(['I', ' ', 'don\u2019t', ' ', 'know'])
+  })
   it('splits words and separators with offsets', () => {
     const t = tokenize("I don't know.")
     expect(t.map((x) => x.text)).toEqual(['I', ' ', "don't", ' ', 'know', '.'])
