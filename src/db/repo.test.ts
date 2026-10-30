@@ -3,7 +3,7 @@ import { createTestDb } from '@/test/db'
 import { createScheduler } from '@/lib/scheduler'
 import {
   addExtraNewToday, createNote, deleteNote, findDuplicate, getSettings, getTodayCounts, getTodayQueue,
-  gradeCard, headwordKey, undoLastReview, updateNote, updateSettings,
+  gradeCard, headwordKey, planNoteUpdate, undoLastReview, updateNote, updateSettings,
 } from './repo'
 
 const local = (y: number, m: number, d: number, h: number, min = 0) => new Date(y, m - 1, d, h, min).getTime()
@@ -43,12 +43,37 @@ describe('notes and cards', () => {
     const note = await createNote(db, { ...input, enabledTypes: ['zh2en', 'en2zh'] }, NOW, sched)
     const zh = (await db.cards.where('noteId').equals(note.id).toArray()).find((c) => c.type === 'zh2en')!
     await gradeCard(db, zh.id, 3, NOW, sched)
-    const r = await updateNote(db, note.id, { ...input, enabledTypes: ['cloze', 'en2zh'] }, NOW + MIN, sched)
+    const r = await updateNote(db, note.id, { ...input, enabledTypes: ['cloze', 'en2zh'] }, NOW + MIN, sched, ['zh2en'])
     expect(r.created).toEqual(['cloze'])
     expect(r.deleted).toEqual(['zh2en'])
     expect(await db.cards.where('noteId').equals(note.id).count()).toBe(2)
     expect(await db.reviewLogs.where('cardId').equals(zh.id).count()).toBe(0)
     expect(r.note.updatedAt).toBe(NOW + MIN)
+  })
+
+  it('updateNote refuses to delete card types without confirmation and writes nothing', async () => {
+    const db = createTestDb()
+    const note = await createNote(db, { ...input, enabledTypes: ['zh2en', 'en2zh'] }, NOW, sched)
+    const zh = (await db.cards.where('noteId').equals(note.id).toArray()).find((c) => c.type === 'zh2en')!
+    await gradeCard(db, zh.id, 3, NOW, sched)
+    const cardsBefore = await db.cards.where('noteId').equals(note.id).toArray()
+
+    await expect(updateNote(db, note.id, { ...input, meaning: '改过', enabledTypes: ['cloze', 'en2zh'] }, NOW + MIN, sched))
+      .rejects.toThrow('需要确认删除卡型：zh2en')
+    expect(await db.cards.where('noteId').equals(note.id).toArray()).toEqual(cardsBefore)
+    expect(await db.reviewLogs.where('cardId').equals(zh.id).count()).toBe(1)
+    expect((await db.notes.get(note.id))?.meaning).toBe(input.meaning)
+  })
+
+  it('planNoteUpdate reports the card types that would be created and deleted', async () => {
+    const db = createTestDb()
+    const note = await createNote(db, { ...input, enabledTypes: ['zh2en', 'cloze'] }, NOW, sched)
+    // 例句被清空 → cloze 不再可用；新增 en2zh
+    expect(await planNoteUpdate(db, note.id, { ...input, examples: [], enabledTypes: ['zh2en', 'cloze', 'en2zh'] }))
+      .toEqual({ toCreate: ['en2zh'], toDelete: ['cloze'] })
+    expect(await planNoteUpdate(db, note.id, { ...input, enabledTypes: ['zh2en', 'cloze'] }))
+      .toEqual({ toCreate: [], toDelete: [] })
+    expect(await db.cards.where('noteId').equals(note.id).count()).toBe(2)
   })
 
   it('deleteNote cascades to cards and logs', async () => {

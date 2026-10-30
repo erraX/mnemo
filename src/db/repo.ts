@@ -52,8 +52,15 @@ export async function createNote(db: MnemoDB, raw: NoteInput, now = Date.now(), 
   return note
 }
 
+/** 只读：保存前预览哪些卡型会新建 / 删除，供编辑器弹出二次确认 */
+export async function planNoteUpdate(db: MnemoDB, id: string, raw: NoteInput): Promise<{ toCreate: CardType[]; toDelete: CardType[] }> {
+  const cards = await db.cards.where('noteId').equals(id).toArray()
+  return diffTypes(cards.map((c) => c.type), normalizeInput(raw).enabledTypes)
+}
+
+/** 删除卡型会连同复习历史一起删，所以每个被删卡型必须出现在 confirmDelete 里，否则不写任何东西 */
 export async function updateNote(
-  db: MnemoDB, id: string, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler,
+  db: MnemoDB, id: string, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler, confirmDelete: CardType[] = [],
 ): Promise<{ note: Note; created: CardType[]; deleted: CardType[] }> {
   const input = normalizeInput(raw)
   return db.transaction('rw', db.notes, db.cards, db.reviewLogs, db.settings, async () => {
@@ -61,6 +68,8 @@ export async function updateNote(
     if (!existing) throw new Error(`note ${id} not found`)
     const cards = await db.cards.where('noteId').equals(id).toArray()
     const { toCreate, toDelete } = diffTypes(cards.map((c) => c.type), input.enabledTypes)
+    const unconfirmed = toDelete.filter((t) => !confirmDelete.includes(t))
+    if (unconfirmed.length) throw new Error(`需要确认删除卡型：${unconfirmed.join(', ')}`)
 
     const doomed = cards.filter((c) => toDelete.includes(c.type)).map((c) => c.id)
     if (doomed.length) {
