@@ -59,6 +59,30 @@ describe('buildQueueParts', () => {
     expect(buildQueue(input([n, r, l])).map((c) => c.id)).toEqual([l.id, r.id, n.id])
   })
 
+  it('shows only one new card per note: the oldest by createdAt', () => {
+    const a1 = card({ noteId: 'nA', createdAt: NOW - 300 })
+    const a2 = card({ noteId: 'nA', createdAt: NOW - 900 })
+    const a3 = card({ noteId: 'nA', createdAt: NOW - 600 })
+    expect(buildQueueParts(input([a1, a2, a3])).fresh.map((c) => c.id)).toEqual([a2.id])
+  })
+
+  it('a review card hides its sibling new card for the day', () => {
+    const r = card({ noteId: 'nA', state: 2, due: NOW - MIN })
+    const n = card({ noteId: 'nA' })
+    const p = buildQueueParts(input([r, n]))
+    expect(p.review.map((c) => c.id)).toEqual([r.id])
+    expect(p.fresh).toEqual([])
+  })
+
+  it('sibling dedupe does not consume the new-card limit', () => {
+    const a1 = card({ noteId: 'nA', createdAt: NOW - 300 })
+    const a2 = card({ noteId: 'nA', createdAt: NOW - 900 })
+    const a3 = card({ noteId: 'nA', createdAt: NOW - 600 })
+    const b = card({ noteId: 'nB', createdAt: NOW - 100 })
+    expect(buildQueueParts(input([a1, a2, a3, b], { newCardsPerDay: 1 })).fresh.map((c) => c.id)).toEqual([a2.id])
+    expect(buildQueueParts(input([a1, a2, a3, b], { newCardsPerDay: 2 })).fresh.map((c) => c.id)).toEqual([a2.id, b.id])
+  })
+
   it('when nothing else is due, learning cards within 20 minutes are pulled forward', () => {
     const soon = card({ state: 1, due: NOW + 5 * MIN })
     const far = card({ state: 1, due: NOW + 25 * MIN })

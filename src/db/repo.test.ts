@@ -87,7 +87,7 @@ describe('grading, burying, undo', () => {
   it('today queue shows only one card per note, then the graded learning card when due', async () => {
     const db = createTestDb()
     const note = await createNote(db, { ...input, enabledTypes: [...input.enabledTypes] }, NOW, sched)
-    expect(await getTodayQueue(db, NOW)).toHaveLength(3)
+    expect(await getTodayQueue(db, NOW)).toHaveLength(1)
     const [first] = await getTodayQueue(db, NOW)
     await gradeCard(db, first!.id, 3, NOW, sched)
     const q = await getTodayQueue(db, NOW)
