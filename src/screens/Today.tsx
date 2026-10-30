@@ -4,6 +4,7 @@ import { db } from '@/db/db'
 import { getSettings, getTodayCounts } from '@/db/repo'
 import { OriginBanner } from '@/components/OriginBanner'
 import type { DictLoadState } from '@/app/useDictLoader'
+import type { Settings } from '@/domain/types'
 
 const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -11,8 +12,12 @@ function todayLabel(now = new Date()) {
   return `${now.getMonth() + 1} 月 ${now.getDate()} 日 · ${WEEKDAY[now.getDay()]}`
 }
 
-function daysSince(ts: number | undefined, now = Date.now()) {
-  return ts === undefined ? undefined : Math.floor((now - ts) / 86_400_000)
+/** settings 未加载时不显示，避免首次渲染闪现提醒条 */
+export function backupNudgeText(settings: Settings | undefined, noteCount: number, now = Date.now()): string | undefined {
+  if (settings === undefined) return undefined
+  if (settings.lastBackupAt === undefined) return noteCount > 0 ? '还没有备份过' : undefined
+  const days = Math.floor((now - settings.lastBackupAt) / 86_400_000)
+  return days >= 7 ? `上次备份是 ${days} 天前` : undefined
 }
 
 export function Today({ dict }: { dict: DictLoadState }) {
@@ -21,7 +26,7 @@ export function Today({ dict }: { dict: DictLoadState }) {
   const settings = useLiveQuery(() => getSettings(db), [])
   const drafts = useLiveQuery(() => db.drafts.count(), [], 0)
   const noteCount = useLiveQuery(() => db.notes.count(), [], 0)
-  const backupAge = daysSince(settings?.lastBackupAt)
+  const backupNudge = backupNudgeText(settings, noteCount)
   const total = counts.due + counts.fresh
 
   return (
@@ -63,9 +68,9 @@ export function Today({ dict }: { dict: DictLoadState }) {
         </div>
       </Link>
 
-      {backupAge !== undefined && backupAge >= 7 && (
+      {backupNudge && (
         <Link to="/settings" className="flex items-center justify-between rounded-(--radius-field) border border-notice-line bg-notice-bg px-3 py-2 text-xs text-notice-fg">
-          <span>上次备份是 {backupAge} 天前</span>
+          <span>{backupNudge}</span>
           <span className="font-semibold text-accent">立即备份</span>
         </Link>
       )}
