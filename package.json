@@ -19,7 +19,8 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^7.11.0",
-    "ts-fsrs": "^5.4.2"
+    "ts-fsrs": "^5.4.2",
+    "workbox-window": "^7.4.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -35,6 +36,10 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
     "vite-plugin-pwa": "^2.0.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "workbox-build": "^7.4.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.66.0"
   }
 }
