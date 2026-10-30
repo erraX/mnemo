@@ -9,6 +9,8 @@ export interface DictLoadState {
   done: number
   total: number
   ms?: number
+  fetchMs?: number
+  writeMs?: number
   entries?: number
   error?: string
 }
@@ -23,7 +25,7 @@ export function useDictLoader(): DictLoadState {
       url: dictUrl(),
       onProgress: (done, total) => { if (!cancelled) setS({ state: 'loading', done, total }) },
     })
-      .then((r) => { if (!cancelled) setS({ state: 'ready', done: r.entries, total: r.entries, ms: r.ms, entries: r.entries }) })
+      .then((r) => { if (!cancelled) setS({ state: 'ready', done: r.entries, total: r.entries, ms: r.ms, fetchMs: r.fetchMs, writeMs: r.writeMs, entries: r.entries }) })
       .catch((e: Error) => { if (!cancelled) setS({ state: 'error', done: 0, total: 0, error: e.message }) })
     return () => { cancelled = true }
   }, [])

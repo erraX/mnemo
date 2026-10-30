@@ -140,16 +140,20 @@ export async function getSettings(db: MnemoDB): Promise<Settings> {
 }
 
 export async function updateSettings(db: MnemoDB, patch: Partial<Omit<Settings, 'id'>>): Promise<Settings> {
-  const next: Settings = { ...(await getSettings(db)), ...patch, id: 'settings' }
-  await db.settings.put(next)
-  return next
+  return db.transaction('rw', db.settings, async () => {
+    const next: Settings = { ...(await getSettings(db)), ...patch, id: 'settings' }
+    await db.settings.put(next)
+    return next
+  })
 }
 
 export async function addExtraNewToday(db: MnemoDB, count: number, now = Date.now()): Promise<Settings> {
-  const dayStart = learningDayStart(now)
-  const s = await getSettings(db)
-  const prev = s.extraNew && s.extraNew.dayStart === dayStart ? s.extraNew.count : 0
-  return updateSettings(db, { extraNew: { dayStart, count: prev + count } })
+  return db.transaction('rw', db.settings, async () => {
+    const dayStart = learningDayStart(now)
+    const s = await getSettings(db)
+    const prev = s.extraNew && s.extraNew.dayStart === dayStart ? s.extraNew.count : 0
+    return updateSettings(db, { extraNew: { dayStart, count: prev + count } })
+  })
 }
 
 export async function getTodayParts(db: MnemoDB, now = Date.now()): Promise<QueueParts> {

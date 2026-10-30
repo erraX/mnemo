@@ -74,7 +74,7 @@ export function Today({ dict }: { dict: DictLoadState }) {
         <p className="text-xs text-muted">正在准备词典… {dict.total ? `${dict.done} / ${dict.total}` : ''}</p>
       )}
       {dict.state === 'ready' && dict.entries ? (
-        <p className="text-xs text-muted">词典已就绪：{dict.entries} 条，用时 {dict.ms} ms</p>
+        <p className="text-xs text-muted">词典已就绪：{dict.entries} 条，用时 {dict.ms} ms（下载 {dict.fetchMs} / 写入 {dict.writeMs}）</p>
       ) : null}
       {dict.state === 'error' && <p className="text-xs text-again-fg">词典加载失败：{dict.error}</p>}
 
