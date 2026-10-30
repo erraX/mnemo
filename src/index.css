@@ -32,7 +32,17 @@
     --color-ink: #f5f5f7;
     --color-muted: #8e8e93;
     --color-line: #2c2c2e;
+    --color-again-fg: #ff6961;
+    --color-again-bg: color-mix(in srgb, #ff6961 18%, transparent);
+    --color-hard-fg: #ffb340;
+    --color-hard-bg: color-mix(in srgb, #ffb340 18%, transparent);
+    --color-good-fg: #30d158;
+    --color-good-bg: color-mix(in srgb, #30d158 18%, transparent);
     --color-easy-fg: #0a84ff;
+    --color-easy-bg: color-mix(in srgb, #0a84ff 18%, transparent);
+    --color-notice-fg: #ffd60a;
+    --color-notice-bg: color-mix(in srgb, #ffd60a 15%, transparent);
+    --color-notice-line: color-mix(in srgb, #ffd60a 35%, transparent);
   }
 }
 

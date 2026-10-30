@@ -110,13 +110,14 @@ export function createScheduler(overrides: { enable_fuzz?: boolean } = {}): Sche
           last_elapsed_days: log.last_elapsed_days,
           scheduled_days: log.scheduled_days,
           learning_steps: log.learning_steps,
+          prevDue: card.due,
         },
       }
     },
 
     rollback(card, log) {
       const prev = f.rollback(toFsrs(card), toFsrsLog(log))
-      return { ...card, ...toStored(prev) }
+      return { ...card, ...toStored(prev), due: log.prevDue ?? prev.due.getTime() }
     },
 
     previewIntervals(card, now) {

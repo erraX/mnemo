@@ -52,20 +52,26 @@ export function detectBlanks(text: string, headword: string, forms: string[] = [
   const formSet = new Set(forms.map((f) => f.toLowerCase()))
   const tokens = tokenize(text).filter((t) => t.isWord)
 
-  const matches = (token: Token, word: string, single: boolean): boolean => {
+  const single = words.length === 1
+  const exact = (token: Token, word: string): boolean => {
     const t = token.text.toLowerCase()
-    if (single && formSet.has(t)) return true
-    return looseMatch(t, word)
+    return t === word || (single && formSet.has(t))
+  }
+  const loose = (token: Token, word: string): boolean => looseMatch(token.text, word)
+
+  const firstWindow = (matches: (token: Token, word: string) => boolean): Blank[] | undefined => {
+    for (let i = 0; i + words.length <= tokens.length; i += 1) {
+      let ok = true
+      for (let k = 0; k < words.length; k += 1) {
+        if (!matches(tokens[i + k]!, words[k]!)) { ok = false; break }
+      }
+      if (ok) return tokens.slice(i, i + words.length).map((t) => ({ start: t.start, end: t.end }))
+    }
+    return undefined
   }
 
-  for (let i = 0; i + words.length <= tokens.length; i += 1) {
-    let ok = true
-    for (let k = 0; k < words.length; k += 1) {
-      if (!matches(tokens[i + k]!, words[k]!, words.length === 1)) { ok = false; break }
-    }
-    if (ok) return tokens.slice(i, i + words.length).map((t) => ({ start: t.start, end: t.end }))
-  }
-  return []
+  // 先找精确 / 词形表匹配，都没有才退到宽松匹配，避免 “only” 抢在 “one” 前面
+  return firstWindow(exact) ?? firstWindow(loose) ?? []
 }
 
 export function toggleBlank(blanks: Blank[], token: Token): Blank[] {

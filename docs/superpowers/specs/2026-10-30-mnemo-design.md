@@ -123,6 +123,9 @@ interface ReviewLog {
   // ts-fsrs ReviewLog 其余字段原样持久化，用于 rollback 与将来参数优化
   state: number; due: number; stability: number; difficulty: number;
   elapsed_days: number; last_elapsed_days: number; scheduled_days: number;
+  learning_steps: number;
+  buriedSiblingIds: string[]; // 这次打分埋掉的同记录卡片 id，撤销时解除
+  prevDue?: number;          // 打分前的 due，用于精确撤销（ts-fsrs 的 rollback 对非 New 状态会把 due 设成复习时刻）
 }
 
 interface Draft {

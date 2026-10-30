@@ -165,10 +165,13 @@ export async function addExtraNewToday(db: MnemoDB, count: number, now = Date.no
   })
 }
 
+/** 查询窗口在学习日结束后再多留一小时：接近 04:00 时提前拉出（learn-ahead）的学习中卡片可能落在边界之后 */
+const QUEUE_HORIZON_SLACK_MS = 60 * 60_000
+
 export async function getTodayParts(db: MnemoDB, now = Date.now()): Promise<QueueParts> {
   const settings = await getSettings(db)
   const dayStart = learningDayStart(now)
-  const horizon = nextLearningDayStart(now) + 60 * 60_000
+  const horizon = nextLearningDayStart(now) + QUEUE_HORIZON_SLACK_MS
   const [cards, logs] = await Promise.all([
     db.cards.where('due').below(horizon).toArray(),
     db.reviewLogs.where('reviewedAt').aboveOrEqual(dayStart).toArray(),

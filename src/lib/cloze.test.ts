@@ -41,6 +41,14 @@ describe('detectBlanks', () => {
   it('returns [] when nothing matches', () => {
     expect(detectBlanks(sentence, 'leverage')).toEqual([])
   })
+  it('prefers an exact match anywhere over an earlier loose match', () => {
+    const s = 'I only have one.'
+    expect(detectBlanks(s, 'one')).toEqual([{ start: s.indexOf('one.'), end: s.indexOf('one.') + 3 }])
+  })
+  it('prefers a forms match anywhere over an earlier loose match', () => {
+    // “Having” 宽松匹配 have，但 forms 里的 “had” 更可信
+    expect(detectBlanks('Having had it.', 'have', ['had'])).toEqual([{ start: 7, end: 10 }])
+  })
   it('only blanks the first occurrence', () => {
     expect(detectBlanks('Concern leads to concern.', 'concern')).toEqual([{ start: 0, end: 7 }])
   })

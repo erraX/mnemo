@@ -74,6 +74,8 @@ export interface ReviewLog {
   learning_steps: number
   /** 这次打分埋掉的同记录卡片 id，撤销时解除 */
   buriedSiblingIds: string[]
+  /** 打分前的 due，用于精确撤销（ts-fsrs 的 rollback 对非 New 状态会把 due 设成复习时刻） */
+  prevDue?: number
 }
 
 export interface Draft {

@@ -48,6 +48,14 @@ describe('scheduler (fuzz off for determinism)', () => {
     expect(back).toEqual({ ...c, last_review: undefined })
   })
 
+  it('rollback from Review restores the Learning card exactly', () => {
+    const c = s.newCard('n1', 'zh2en', T0)
+    const learning = s.grade(c, 3, T0).card
+    const { card: review, log } = s.grade(learning, 3, T0 + DAY)
+    expect(review.state).toBe(2)
+    expect(s.rollback(review, { ...log, id: 'l2', buriedSiblingIds: [] })).toEqual(learning)
+  })
+
   it('previewIntervals returns four labels ordered by rating', () => {
     const c = s.newCard('n1', 'zh2en', T0)
     const p = s.previewIntervals(c, T0)
