@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createTestDb } from '@/test/db'
 import { createNote, getSettings, gradeCard, updateSettings } from '@/db/repo'
 import { createScheduler } from '@/lib/scheduler'
-import { backupFilename, exportBackup, importBackup, validateBackup } from './backup'
+import { backupFilename, exportBackup, importBackup, markBackedUp, validateBackup } from './backup'
 
 const NOW = new Date(2026, 9, 30, 9, 5).getTime()
 const sched = createScheduler({ enable_fuzz: false })
@@ -17,13 +17,15 @@ describe('backup', () => {
     await updateSettings(src, { newCardsPerDay: 7, dictVersion: 'src-dict' })
 
     const file = await exportBackup(src, NOW)
-    expect(validateBackup(JSON.parse(JSON.stringify(file)))).toBe(true)
-    expect((await getSettings(src)).lastBackupAt).toBe(NOW)
+    const parsed: unknown = JSON.parse(JSON.stringify(file))
+    if (!validateBackup(parsed)) throw new Error('backup did not validate')
+    expect(parsed.exportedAt).toBe(NOW)
+    expect((await getSettings(src)).lastBackupAt).toBeUndefined() // 导出本身不写 lastBackupAt
 
     const dst = createTestDb()
     await dst.notes.add({ ...note, id: 'stale', headwordKey: 'stale', headword: 'stale' })
     await updateSettings(dst, { dictVersion: 'dst-dict' })
-    await importBackup(dst, file)
+    await importBackup(dst, parsed)
 
     expect(await dst.notes.toArray()).toEqual(await src.notes.toArray())
     expect(await dst.cards.toArray()).toEqual(await src.cards.toArray())
@@ -32,6 +34,14 @@ describe('backup', () => {
     const s = await getSettings(dst)
     expect(s.newCardsPerDay).toBe(7)
     expect(s.dictVersion).toBe('dst-dict')
+  })
+
+  it('markBackedUp records the time only when called (after a successful share)', async () => {
+    const db = createTestDb()
+    await exportBackup(db, NOW)
+    expect((await getSettings(db)).lastBackupAt).toBeUndefined()
+    expect((await markBackedUp(db, NOW)).lastBackupAt).toBe(NOW)
+    expect((await getSettings(db)).lastBackupAt).toBe(NOW)
   })
 
   it('validateBackup rejects foreign or malformed files', () => {

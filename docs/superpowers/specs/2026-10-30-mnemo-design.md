@@ -255,9 +255,9 @@ interface Settings {         // 单例
 
 ### 5.9 备份与恢复
 
-- **导出**：生成 JSON `{ version: 1, exportedAt, notes, cards, review_logs, drafts, settings }`，文件名 `flashcards-backup-YYYYMMDD-HHmm.json`。优先 `navigator.share({ files })`（iOS 15+，可直接"存储到文件"→ iCloud Drive），不支持则退化为下载链接。
+- **导出**：生成 JSON `{ app: 'mnemo', version: 1, exportedAt, notes, cards, reviewLogs, drafts, settings }`（`app` 字段用于识别本应用的备份），文件名 `mnemo-backup-YYYYMMDD-HHmm.json`。优先 `navigator.share({ files })`（iOS 15+，可直接"存储到文件"→ iCloud Drive），不支持则退化为下载链接。
 - **恢复**：`<input type="file" accept=".json">`，校验 `version`，弹出确认"将覆盖当前全部数据"，清空各表后 `bulkAdd`。**MVP 只做整体覆盖，不做合并。**
-- 成功导出后更新 `lastBackupAt`。首页在距上次备份超过 7 天时显示温和提醒条。
+- `exportBackup` 只读；`lastBackupAt` 在分享成功后（`navigator.share` resolve 或下载触发后）由 `markBackedUp` 写入，取消分享不算备份。首页在距上次备份超过 7 天时显示温和提醒条；从未备份过且已有记录时也显示（“还没有备份过”）。
 - 不备份音频缓存（可重新获取）和词典（可重新灌入）。
 
 ### 5.10 PWA、离线、部署

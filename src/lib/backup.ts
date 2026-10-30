@@ -13,12 +13,18 @@ export interface BackupFile {
   settings: Settings
 }
 
+/** 只读；不写 lastBackupAt，分享成功后由 markBackedUp 记录 */
 export async function exportBackup(db: MnemoDB, now = Date.now()): Promise<BackupFile> {
-  const [notes, cards, reviewLogs, drafts] = await Promise.all([
-    db.notes.toArray(), db.cards.toArray(), db.reviewLogs.toArray(), db.drafts.toArray(),
-  ])
-  const settings = await updateSettings(db, { lastBackupAt: now })
-  return { app: 'mnemo', version: 1, exportedAt: now, notes, cards, reviewLogs, drafts, settings }
+  return db.transaction('r', db.notes, db.cards, db.reviewLogs, db.drafts, db.settings, async () => {
+    const [notes, cards, reviewLogs, drafts, settings] = await Promise.all([
+      db.notes.toArray(), db.cards.toArray(), db.reviewLogs.toArray(), db.drafts.toArray(), getSettings(db),
+    ])
+    return { app: 'mnemo', version: 1, exportedAt: now, notes, cards, reviewLogs, drafts, settings }
+  })
+}
+
+export async function markBackedUp(db: MnemoDB, now = Date.now()): Promise<Settings> {
+  return updateSettings(db, { lastBackupAt: now })
 }
 
 export function validateBackup(x: unknown): x is BackupFile {
