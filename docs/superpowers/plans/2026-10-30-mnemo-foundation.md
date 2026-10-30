@@ -95,7 +95,7 @@ README.md
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b",
     "build:dict": "tsx scripts/build-dict.ts"
   },
   "dependencies": {
