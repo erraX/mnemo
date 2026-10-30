@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mnemo — MVP mockups 与设计规范</title>
+<style>
+  :root { --bg:#f5f5f7; --panel:#fff; --border:#d1d1d6; --text:#1d1d1f; --muted:#86868b; --accent:#0071e3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif; line-height:1.5; }
+  main { max-width:1180px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+  h1 { font-size:1.8rem; margin:0 0 .25rem; }
+  h2 { font-size:1.35rem; margin:2.5rem 0 .25rem; }
+  h4 { margin:0 0 .75rem; font-size:.9rem; }
+  .subtitle { color:var(--muted); margin:0 0 1.25rem; font-size:.95rem; }
+  .toc { display:flex; gap:1rem; flex-wrap:wrap; font-size:.9rem; margin:1rem 0 0; }
+  .toc a { color:var(--accent); text-decoration:none; }
+  code { background:#e9e9eb; border-radius:4px; padding:0 4px; font-size:.9em; }
+  hr { border:0; border-top:1px solid var(--border); margin:2.5rem 0; }
+
+  .phones { display:flex; gap:1.25rem; flex-wrap:wrap; align-items:flex-start; }
+  .shot { border:1px solid var(--border); border-radius:16px; padding:1rem; background:var(--panel); width:340px; }
+  .shot h3 { font-size:1rem; margin:0; }
+  .shot p { color:var(--muted); font-size:.85rem; margin:.25rem 0 .75rem; min-height:2.6em; }
+
+  /* phone shell */
+  .phone { width:300px; height:660px; margin:0 auto; border-radius:40px; border:10px solid #111; background:#f5f5f7; color:#1d1d1f; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,.18); font-size:14px; position:relative; }
+  .phone.white { background:#fff; }
+  .phone.dark { background:#000; color:#f5f5f7; }
+  .ph-top { display:flex; justify-content:space-between; align-items:center; padding:12px 20px 0; font-size:12px; color:#86868b; }
+  .ph-top b { color:inherit; font-weight:600; }
+
+  /* review */
+  .prog { height:4px; background:#e5e5e7; margin:10px 20px 0; border-radius:2px; }
+  .prog i { display:block; height:100%; width:40%; background:#0071e3; border-radius:2px; }
+  .ph-card { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 24px; gap:12px; }
+  .tag { font-size:11px; color:#86868b; letter-spacing:.08em; text-transform:uppercase; }
+  .sent { font-size:19px; line-height:1.5; }
+  .blank { display:inline-block; min-width:90px; border-bottom:2px solid #0071e3; vertical-align:bottom; margin:0 2px; }
+  .zh { font-size:15px; color:#555; line-height:1.5; }
+  .zh.big { font-size:24px; color:#111; font-weight:600; line-height:1.4; }
+  .src { font-size:12px; color:#aeaeb2; }
+  .ph-bottom { padding:14px 20px 24px; }
+  .reveal { background:#0071e3; color:#fff; border-radius:14px; padding:14px; text-align:center; font-size:16px; font-weight:600; }
+  .hint { font-size:12px; color:#86868b; text-align:center; margin-bottom:10px; }
+  .pos { font-size:12px; color:#0071e3; background:#e8f4fd; border-radius:6px; padding:2px 8px; display:inline-block; margin-right:4px; }
+  .word { font-size:30px; font-weight:700; letter-spacing:-.01em; }
+  .ipa { font-size:15px; color:#555; display:flex; align-items:center; gap:8px; }
+  .spk { width:26px; height:26px; border-radius:50%; background:#e8f4fd; color:#0071e3; display:inline-flex; align-items:center; justify-content:center; font-size:13px; }
+  .hl { background:#fff3bf; border-bottom:2px solid #f5b800; border-radius:3px; padding:0 2px; }
+  .grades { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .g { border-radius:12px; padding:9px 4px; text-align:center; font-size:13px; font-weight:600; }
+  .g small { display:block; font-weight:400; font-size:10px; opacity:.75; margin-top:2px; }
+  .g1 { background:#ffe5e3; color:#c0392b; } .g2 { background:#fff0d6; color:#b7791f; } .g3 { background:#e3f6e8; color:#1e8449; } .g4 { background:#e8f4fd; color:#0071e3; }
+
+  /* editor + inbox */
+  .nav { display:flex; justify-content:space-between; align-items:center; padding:14px 16px 8px; background:#fff; border-bottom:1px solid #e5e5e7; }
+  .nav b { font-size:15px; }
+  .nav span { color:#0071e3; font-size:14px; }
+  .nav span.strong { font-weight:600; }
+  .ebody { flex:1; overflow:hidden; padding:10px 12px; display:flex; flex-direction:column; gap:8px; font-size:13px; }
+  .fld { background:#fff; border-radius:12px; padding:8px 12px; }
+  .fld .lb { font-size:10px; color:#86868b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; display:flex; justify-content:space-between; }
+  .fld .lb em { font-style:normal; color:#34c759; text-transform:none; letter-spacing:0; }
+  .fld .lb i { font-style:normal; color:#0071e3; text-transform:none; letter-spacing:0; }
+  .fld .v { font-size:14px; line-height:1.4; }
+  .fld .v.big { font-size:20px; font-weight:600; }
+  .muted { color:#aeaeb2; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { border-radius:999px; padding:6px 11px; font-size:12px; border:1px solid #d1d1d6; color:#555; background:#fff; }
+  .chip.on { background:#111; color:#fff; border-color:#111; }
+  .chip.off { opacity:.45; }
+  .save { margin:4px 12px 20px; background:#0071e3; color:#fff; border-radius:14px; padding:13px; text-align:center; font-size:15px; font-weight:600; }
+  .draft { background:#fff; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
+  .draft .t { font-size:14px; }
+  .draft .s { font-size:11px; color:#86868b; margin-top:2px; }
+  .badge { font-size:10px; padding:2px 7px; border-radius:999px; background:#fff0d6; color:#b7791f; white-space:nowrap; }
+  .badge.ok { background:#e3f6e8; color:#1e8449; }
+
+  /* home / list / settings */
+  .hbody { flex:1; overflow:hidden; padding:6px 16px 0; display:flex; flex-direction:column; gap:10px; }
+  .hbody > *, .ebody > * { flex-shrink:0; }
+  .lt { font-size:30px; font-weight:700; letter-spacing:-.02em; margin-top:4px; line-height:1.15; }
+  .lt small { display:block; font-size:13px; font-weight:400; color:#86868b; margin-top:2px; }
+  .hcard { background:#fff; border-radius:14px; padding:14px; }
+  .dark .hcard { background:#1c1c1e; }
+  .nums { display:flex; gap:10px; }
+  .num { flex:1; }
+  .num b { display:block; font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
+  .num span { font-size:12px; color:#86868b; }
+  .num.new b { color:#0071e3; }
+  .btn { background:#0071e3; color:#fff; border-radius:14px; padding:14px; text-align:center; font-size:16px; font-weight:600; }
+  .btn.sec { background:#e8f4fd; color:#0071e3; }
+  .dark .btn { background:#0a84ff; }
+  .dark .btn.sec { background:rgba(10,132,255,.18); color:#0a84ff; }
+  .row { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#fff; border-radius:14px; }
+  .dark .row { background:#1c1c1e; }
+  .row .t { font-size:15px; }
+  .row .s { font-size:12px; color:#86868b; margin-top:2px; }
+  .chev { color:#c7c7cc; font-size:18px; }
+  .cnt { font-size:11px; padding:2px 8px; border-radius:999px; background:#0071e3; color:#fff; margin-right:8px; }
+  .dark .cnt { background:#0a84ff; }
+  .nudge { display:flex; justify-content:space-between; align-items:center; background:#fff8e6; border:1px solid #ffe2a8; border-radius:12px; padding:10px 12px; font-size:12px; color:#8a5a00; }
+  .nudge b { color:#0071e3; font-weight:600; }
+  .fab { position:absolute; right:18px; bottom:78px; width:52px; height:52px; border-radius:50%; background:#0071e3; color:#fff; font-size:30px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(0,113,227,.35); line-height:1; }
+  .dark .fab { background:#0a84ff; }
+  .tabs { display:flex; justify-content:space-around; padding:8px 0 20px; border-top:1px solid #e5e5e7; background:#f9f9f9; font-size:10px; color:#86868b; }
+  .dark .tabs { background:#111; border-color:#2c2c2e; }
+  .tab { display:flex; flex-direction:column; align-items:center; gap:3px; width:60px; }
+  .tab i { width:22px; height:22px; border-radius:6px; background:#c7c7cc; display:block; }
+  .dark .tab i { background:#48484a; }
+  .tab.on { color:#0071e3; } .tab.on i { background:#0071e3; }
+  .dark .tab.on { color:#0a84ff; } .dark .tab.on i { background:#0a84ff; }
+  .search { background:#e9e9eb; border-radius:10px; padding:8px 12px; font-size:14px; color:#86868b; }
+  .list { background:#fff; border-radius:14px; overflow:hidden; }
+  .li { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:1px solid #f0f0f2; }
+  .li:last-child { border-bottom:0; }
+  .li .hw { font-size:16px; font-weight:600; }
+  .li .mn { font-size:12px; color:#86868b; margin-top:2px; max-width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .li .r { text-align:right; font-size:11px; color:#86868b; }
+  .ty { display:inline-flex; gap:3px; margin-bottom:3px; }
+  .ty i { font-style:normal; white-space:nowrap; font-size:9px; padding:1px 4px; border-radius:4px; background:#eef0f3; color:#555; }
+  .ty i.on { background:#e8f4fd; color:#0071e3; }
+  .grp { background:#fff; border-radius:14px; overflow:hidden; }
+  .gh { font-size:11px; color:#86868b; text-transform:uppercase; letter-spacing:.06em; padding:0 4px; margin-bottom:-4px; }
+  .sr { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #f0f0f2; font-size:15px; }
+  .sr:last-child { border-bottom:0; }
+  .sr .v { color:#86868b; font-size:14px; display:flex; align-items:center; gap:6px; }
+  .tg { width:40px; height:24px; border-radius:12px; background:#34c759; position:relative; }
+  .tg::after { content:''; position:absolute; right:2px; top:2px; width:20px; height:20px; border-radius:50%; background:#fff; }
+  .seg { display:flex; background:#e9e9eb; border-radius:8px; padding:2px; font-size:12px; }
+  .seg span { padding:3px 10px; border-radius:6px; color:#555; }
+  .seg span.on { background:#fff; color:#111; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.1); }
+  .done { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:0 24px; }
+  .okicon { width:72px; height:72px; border-radius:50%; background:#e3f6e8; color:#1e8449; font-size:34px; display:flex; align-items:center; justify-content:center; }
+  .okicon.pause { background:#e8f4fd; color:#0071e3; font-size:28px; }
+  .done h4 { font-size:22px; font-weight:700; margin:6px 0 0; }
+  .stats { display:flex; gap:18px; font-size:12px; color:#86868b; }
+  .stats b { display:block; font-size:20px; color:#1d1d1f; }
+  .btns { padding:0 16px 28px; display:flex; flex-direction:column; gap:10px; }
+
+  /* spec */
+  .spec { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.25rem; }
+  .sp { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:1rem; }
+  .sw { display:flex; gap:8px; flex-wrap:wrap; }
+  .sw div { width:92px; font-size:10px; color:var(--muted); }
+  .sw i { display:block; height:36px; border-radius:8px; border:1px solid rgba(0,0,0,.08); margin-bottom:3px; }
+  .ts div { display:flex; align-items:baseline; gap:12px; margin-bottom:8px; }
+  .ts small { font-size:10px; color:var(--muted); width:120px; flex-shrink:0; }
+  .demo { background:#f5f5f7; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; font-size:14px; }
+  .sp ul { font-size:.85rem; color:var(--muted); margin:0 0 0 1.1rem; line-height:1.7; padding:0; }
+  .sp p { font-size:.8rem; color:var(--muted); margin:.75rem 0 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Mnemo — MVP mockups 与设计规范</h1>
+<p class="subtitle">配合 <code>docs/superpowers/specs/2026-10-30-mnemo-design.md</code> 阅读。这些是 brainstorm 阶段确认过的方向，不是像素稿；实现时在真机上调细节。</p>
+<nav class="toc">
+  <a href="#review">1. 复习</a>
+  <a href="#editor">2. 建卡与收集箱</a>
+  <a href="#screens">3. 今日 / 列表 / 设置 / 完成 / 歇脚 / 深色</a>
+  <a href="#spec">4. 设计规范</a>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="review">1. 复习</h2>
+<p class="subtitle">三种卡型各自的正面，以及共用的背面。示例记录：<code>concern</code>，原句摘自一篇文章。</p>
+
+<div class="phones">
+
+  <div class="shot">
+    <h3>中 → 英 正面</h3>
+    <p>只给中文释义（词典原样、多行），要求说出英文。</p>
+    <div class="phone white">
+      <div class="ph-top"><span>9:41</span><b>剩余 18</b><span>⋯</span></div>
+      <div class="prog"><i></i></div>
+      <div class="ph-card">
+        <div class="tag">说出英文</div>
+        <div><span class="pos">n.</span><span class="pos">v.</span></div>
+        <div class="zh big">担忧，顾虑；关心<br>涉及；使担忧</div>
+      </div>
+      <div class="ph-bottom"><div class="hint">想好了再翻</div><div class="reveal">看答案</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>例句挖空 正面</h3>
+    <p>第一条带挖空的原句，目标词处是下划线空格；来源小字。不给中文。</p>
+    <div class="phone white">
+      <div class="ph-top"><span>9:41</span><b>剩余 18</b><span>⋯</span></div>
+      <div class="prog"><i></i></div>
+      <div class="ph-card">
+        <div class="tag">填上这个词</div>
+        <div class="sent">I have some <span class="blank"></span> about the proposed timeline.</div>
+        <div class="src">— The Economist · 2025-10</div>
+      </div>
+      <div class="ph-bottom"><div class="hint">想好了再翻</div><div class="reveal">看答案</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>英 → 中 正面</h3>
+    <p>单词 + 音标 + 发音按钮（不自动播），要求想出意思。</p>
+    <div class="phone white">
+      <div class="ph-top"><span>9:41</span><b>剩余 18</b><span>⋯</span></div>
+      <div class="prog"><i></i></div>
+      <div class="ph-card" style="align-items:center; text-align:center">
+        <div class="tag">这个词什么意思</div>
+        <div class="word">concern</div>
+        <div class="ipa">/kənˈsɜːrn/ <span class="spk">▶</span></div>
+      </div>
+      <div class="ph-bottom"><div class="hint">想好了再翻</div><div class="reveal">看答案</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>背面（三种卡共用）</h3>
+    <p>完整记录：词、音标 + 发音（翻面自动播）、释义、原句目标词高亮、来源；四档打分带预计间隔。</p>
+    <div class="phone white">
+      <div class="ph-top"><span>9:41</span><b>剩余 18</b><span>⋯</span></div>
+      <div class="prog"><i></i></div>
+      <div class="ph-card" style="justify-content:flex-start; padding-top:28px; gap:10px">
+        <div class="word">concern</div>
+        <div class="ipa">/kənˈsɜːrn/ <span class="spk">▶</span></div>
+        <div style="font-size:14px"><span class="pos">n.</span>担忧，顾虑；关心 <span class="muted">·</span> <span class="pos">v.</span>涉及；使担忧</div>
+        <div class="sent" style="font-size:16px; margin-top:6px">I have some <span class="hl"><b>concerns</b></span> about the proposed timeline.</div>
+        <div class="src">— The Economist · 2025-10</div>
+      </div>
+      <div class="ph-bottom">
+        <div class="grades">
+          <div class="g g1">忘了<small>10 分钟</small></div>
+          <div class="g g2">困难<small>2 天</small></div>
+          <div class="g g3">记得<small>5 天</small></div>
+          <div class="g g4">简单<small>12 天</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 id="editor">2. 建卡与收集箱</h2>
+<p class="subtitle">输入 <code>concern</code> 后词典自动补音标和释义（照单全收、可编辑）；粘入原句后自动识别挖空（点词可改）；卡型多选 chip 默认记住上次勾选。</p>
+
+<div class="phones">
+
+  <div class="shot">
+    <h3>建卡表单</h3>
+    <p>全屏 sheet。保存按钮带将生成的卡数。</p>
+    <div class="phone">
+      <div class="nav"><span>取消</span><b>新卡片</b><span class="strong">保存</span></div>
+      <div class="ebody">
+        <div class="fld"><div class="lb">单词 / 短语 <em>✓ 已从词典补全</em></div><div class="v big">concern</div></div>
+        <div class="fld"><div class="lb">音标</div><div class="v ipa">/kənˈsɜːrn/ <span class="spk">▶</span></div></div>
+        <div class="fld"><div class="lb">释义 <i>编辑</i></div>
+          <div class="v"><span class="pos">n.</span>担忧，顾虑；关心，关注；关系<br><span class="pos">v.</span>涉及，关于；使担忧</div>
+        </div>
+        <div class="fld"><div class="lb">例句 <i>点词改挖空</i></div>
+          <div class="v">I have some <span class="hl">concerns</span> about the proposed timeline.</div>
+          <div class="muted" style="margin-top:4px">来源：The Economist</div>
+        </div>
+        <div class="fld"><div class="lb">卡片类型（多选）</div>
+          <div class="chips"><span class="chip on">中 → 英</span><span class="chip on">例句挖空</span><span class="chip on">英 → 中</span></div>
+        </div>
+      </div>
+      <div class="save">保存 · 生成 3 张卡</div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>建卡表单：短语、词典未命中</h3>
+    <p>短语通常没音标；释义自己写；没有例句时"例句挖空"chip 置灰并说明原因。</p>
+    <div class="phone">
+      <div class="nav"><span>取消</span><b>新卡片</b><span class="strong">保存</span></div>
+      <div class="ebody">
+        <div class="fld"><div class="lb">单词 / 短语 <i>词典没有，手动填写</i></div><div class="v big" style="font-size:17px">have some concerns about</div></div>
+        <div class="fld"><div class="lb">音标</div><div class="v muted">（短语可留空）</div></div>
+        <div class="fld"><div class="lb">释义</div><div class="v">对…有些顾虑 / 担忧</div></div>
+        <div class="fld"><div class="lb">例句 <i>+ 添加</i></div><div class="v muted">粘一段原文进来，效果比词典例句好</div></div>
+        <div class="fld"><div class="lb">来源</div><div class="v muted">文章名 / 剧名（可空）</div></div>
+        <div class="fld"><div class="lb">卡片类型（多选）</div>
+          <div class="chips"><span class="chip on">中 → 英</span><span class="chip off">例句挖空</span><span class="chip on">英 → 中</span></div>
+          <div class="muted" style="font-size:11px; margin-top:6px">例句挖空：先给一条例句并挖一个空</div>
+        </div>
+      </div>
+      <div class="save">保存 · 生成 2 张卡</div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>收集箱</h3>
+    <p>多行粘贴 → 每行一条草稿 → 逐条点开补全。像句子的行当例句，点句子里的词指定要记的词。</p>
+    <div class="phone">
+      <div class="nav"><span></span><b>收集箱</b><span class="strong">粘贴</span></div>
+      <div class="ebody">
+        <div class="fld"><div class="lb">刚粘贴的 4 行</div></div>
+        <div class="draft"><div><div class="t">concern</div><div class="s">词典已补全 · 缺例句</div></div><span class="badge ok">可直接存</span></div>
+        <div class="draft"><div><div class="t">I have some concerns about the proposed timeline.</div><div class="s">像是句子 · 点一个词作为要记的词</div></div><span class="badge">待指定</span></div>
+        <div class="draft"><div><div class="t">leverage</div><div class="s">词典已补全 · 缺例句</div></div><span class="badge ok">可直接存</span></div>
+        <div class="draft"><div><div class="t">ticking time bomb</div><div class="s">词典没有 · 需要自己写释义</div></div><span class="badge">待补全</span></div>
+        <div style="margin-top:auto; text-align:center; color:#86868b; font-size:12px; padding-bottom:10px">左滑删除 · 点击补全</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 id="screens">3. 今日 / 列表 / 设置 / 完成 / 歇脚 / 深色</h2>
+<p class="subtitle">底部 tab bar 三项：今日、卡片、设置。建卡是今日页的悬浮 "+"，收集箱从今日页进入。</p>
+
+<div class="phones">
+
+  <div class="shot">
+    <h3>今日（首页）</h3>
+    <p>两个数字 + 一个大按钮。收集箱入口带待处理数；备份超过 7 天才出现黄条。</p>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="hbody">
+        <div class="lt">今日<small>10 月 30 日 · 周五</small></div>
+        <div class="hcard">
+          <div class="nums"><div class="num"><b>18</b><span>待复习</span></div><div class="num new"><b>12</b><span>新卡</span></div></div>
+          <div class="btn" style="margin-top:14px">开始复习</div>
+        </div>
+        <div class="row"><div><div class="t">收集箱</div><div class="s">4 条待处理</div></div><div><span class="cnt">4</span><span class="chev">›</span></div></div>
+        <div class="nudge"><span>上次备份是 9 天前</span><b>立即备份</b></div>
+        <div style="flex:1"></div>
+        <div style="font-size:11px; color:#aeaeb2; text-align:center; padding-bottom:6px">连续学习 6 天 · 共 132 条记录</div>
+      </div>
+      <div class="fab">+</div>
+      <div class="tabs"><div class="tab on"><i></i>今日</div><div class="tab"><i></i>卡片</div><div class="tab"><i></i>设置</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>卡片（列表）</h3>
+    <p>搜索 headword / 释义 / 例句。每行：词、释义首行、启用的卡型、下次到期。点开编辑，左滑删除。</p>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="hbody">
+        <div class="lt">卡片<small>132 条记录 · 371 张卡</small></div>
+        <div class="search">🔍 搜索单词、释义、例句</div>
+        <div class="list">
+          <div class="li"><div><div class="hw">concern</div><div class="mn">n. 担忧，顾虑；关心 v. 涉及</div></div><div class="r"><div class="ty"><i class="on">中英</i><i class="on">挖空</i><i class="on">英中</i></div>明天</div></div>
+          <div class="li"><div><div class="hw">have some concerns about</div><div class="mn">对…有些顾虑</div></div><div class="r"><div class="ty"><i>中英</i><i class="on">挖空</i><i>英中</i></div>3 天后</div></div>
+          <div class="li"><div><div class="hw">leverage</div><div class="mn">n. 杠杆作用；影响力 v. 利用</div></div><div class="r"><div class="ty"><i class="on">中英</i><i>挖空</i><i class="on">英中</i></div>今天</div></div>
+          <div class="li"><div><div class="hw">ticking time bomb</div><div class="mn">定时炸弹（隐患）</div></div><div class="r"><div class="ty"><i class="on">中英</i><i class="on">挖空</i><i>英中</i></div><span style="color:#0071e3">新</span></div></div>
+          <div class="li"><div><div class="hw">meticulous</div><div class="mn">adj. 一丝不苟的，严谨的</div></div><div class="r"><div class="ty"><i class="on">中英</i><i>挖空</i><i class="on">英中</i></div>12 天后</div></div>
+          <div class="li"><div><div class="hw">on the fence</div><div class="mn">犹豫不决，骑墙</div></div><div class="r"><div class="ty"><i>中英</i><i class="on">挖空</i><i class="on">英中</i></div>1 个月后</div></div>
+        </div>
+      </div>
+      <div class="tabs"><div class="tab"><i></i>今日</div><div class="tab on"><i></i>卡片</div><div class="tab"><i></i>设置</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>设置</h3>
+    <p>iOS 分组列表。四组：学习、发音、数据、关于。备份行显示上次时间。</p>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="hbody">
+        <div class="lt">设置</div>
+        <div class="gh">学习</div>
+        <div class="grp"><div class="sr"><span>每日新卡上限</span><span class="v">20 <span class="chev">›</span></span></div></div>
+        <div class="gh">发音</div>
+        <div class="grp">
+          <div class="sr"><span>口音</span><span class="seg"><span class="on">美音</span><span>英音</span></span></div>
+          <div class="sr"><span>翻面自动朗读</span><span class="tg"></span></div>
+        </div>
+        <div class="gh">数据</div>
+        <div class="grp">
+          <div class="sr"><span>备份到文件</span><span class="v">9 天前 <span class="chev">›</span></span></div>
+          <div class="sr"><span>从文件恢复</span><span class="v"><span class="chev">›</span></span></div>
+        </div>
+        <div class="gh">关于</div>
+        <div class="grp">
+          <div class="sr"><span>版本</span><span class="v">0.1.0</span></div>
+          <div class="sr"><span>词典</span><span class="v">ECDICT (MIT)</span></div>
+          <div class="sr"><span>算法</span><span class="v">ts-fsrs 5.4</span></div>
+          <div class="sr"><span>数据地址</span><span class="v" style="font-size:11px">&lt;user&gt;.github.io</span></div>
+        </div>
+      </div>
+      <div class="tabs"><div class="tab"><i></i>今日</div><div class="tab"><i></i>卡片</div><div class="tab on"><i></i>设置</div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>歇脚页（每 20 张）</h3>
+    <p>不改排期，只给自然停顿点。每次打分已落库，"今天到这"直接回首页。</p>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="done">
+        <div class="okicon pause">☕</div>
+        <h4>已复习 20 张</h4>
+        <div style="font-size:13px; color:#86868b">还剩 14 张</div>
+      </div>
+      <div class="btns">
+        <div class="btn">继续</div>
+        <div class="btn sec">今天到这</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>复习完成页</h3>
+    <p>队列清空后出现。克制，不放彩带。"再学 10 张"是次要按钮。</p>
+    <div class="phone">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="done">
+        <div class="okicon">✓</div>
+        <h4>今天的复习完成了</h4>
+        <div style="font-size:13px; color:#86868b">连续第 6 天</div>
+        <div class="stats" style="margin-top:14px"><div><b>30</b>复习</div><div><b>12</b>新学</div><div><b>9</b>分钟</div></div>
+      </div>
+      <div class="btns">
+        <div class="btn sec">再学 10 张新卡</div>
+        <div class="btn">回到首页</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <h3>深色模式（今日）</h3>
+    <p>跟随系统。纯黑背景、#1c1c1e 卡片、强调色换成 iOS 深色蓝 #0a84ff。</p>
+    <div class="phone dark">
+      <div class="ph-top"><span>9:41</span><b></b><span>●●●</span></div>
+      <div class="hbody">
+        <div class="lt">今日<small>10 月 30 日 · 周五</small></div>
+        <div class="hcard">
+          <div class="nums"><div class="num"><b>18</b><span>待复习</span></div><div class="num new"><b style="color:#0a84ff">12</b><span>新卡</span></div></div>
+          <div class="btn" style="margin-top:14px">开始复习</div>
+        </div>
+        <div class="row"><div><div class="t">收集箱</div><div class="s">4 条待处理</div></div><div><span class="cnt">4</span><span class="chev">›</span></div></div>
+        <div style="flex:1"></div>
+        <div style="font-size:11px; color:#636366; text-align:center; padding-bottom:6px">连续学习 6 天 · 共 132 条记录</div>
+      </div>
+      <div class="fab">+</div>
+      <div class="tabs"><div class="tab on"><i></i>今日</div><div class="tab"><i></i>卡片</div><div class="tab"><i></i>设置</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<hr>
+<h2 id="spec">4. 设计规范</h2>
+<p class="subtitle">实现时照这个来。4pt 网格，屏幕左右内边距 16，卡片内边距 14。</p>
+
+<div class="spec">
+
+  <div class="sp">
+    <h4>颜色 · 浅色 / 深色</h4>
+    <div class="sw">
+      <div><i style="background:#0071e3"></i>强调 #0071e3 / #0a84ff</div>
+      <div><i style="background:#f5f5f7"></i>背景 #f5f5f7 / #000</div>
+      <div><i style="background:#fff"></i>卡片 #fff / #1c1c1e</div>
+      <div><i style="background:#1d1d1f"></i>文字 #1d1d1f / #f5f5f7</div>
+      <div><i style="background:#86868b"></i>次要 #86868b / #8e8e93</div>
+      <div><i style="background:#e5e5e7"></i>分隔 #e5e5e7 / #2c2c2e</div>
+      <div><i style="background:#fff3bf"></i>挖空高亮 #fff3bf</div>
+      <div><i style="background:#ffe5e3"></i>忘了 #ffe5e3 / #c0392b</div>
+      <div><i style="background:#fff0d6"></i>困难 #fff0d6 / #b7791f</div>
+      <div><i style="background:#e3f6e8"></i>记得 #e3f6e8 / #1e8449</div>
+      <div><i style="background:#e8f4fd"></i>简单 #e8f4fd / #0071e3</div>
+      <div><i style="background:#fff8e6; border-color:#ffe2a8"></i>提醒条 #fff8e6</div>
+    </div>
+    <p>深色模式下四个打分色用同色相、12–18% 透明度的底 + 亮一档的前景。</p>
+  </div>
+
+  <div class="sp">
+    <h4>字号层级（系统字体栈）</h4>
+    <div class="ts">
+      <div><small>大标题 30 / 700</small><span style="font-size:30px; font-weight:700">今日</span></div>
+      <div><small>Headword 30 / 700</small><span style="font-size:30px; font-weight:700">concern</span></div>
+      <div><small>数字 34 / 700</small><span style="font-size:34px; font-weight:700">18</span></div>
+      <div><small>标题 22 / 700</small><span style="font-size:22px; font-weight:700">今天的复习完成了</span></div>
+      <div><small>例句 19 / 400</small><span style="font-size:19px">I have some concerns…</span></div>
+      <div><small>正文 16 / 400</small><span style="font-size:16px">n. 担忧，顾虑</span></div>
+      <div><small>次要 14 / 400</small><span style="font-size:14px; color:#86868b">4 条待处理</span></div>
+      <div><small>说明 12 / 400</small><span style="font-size:12px; color:#86868b">— The Economist</span></div>
+      <div><small>标签 11 / 500 大写字距</small><span style="font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#86868b">填上这个词</span></div>
+    </div>
+    <p>中文 PingFang SC，英文 SF（系统自动）。输入框字号 ≥ 16 防 iOS 聚焦缩放。</p>
+  </div>
+
+  <div class="sp">
+    <h4>圆角 / 尺寸</h4>
+    <ul>
+      <li>卡片 / 分组 / 主按钮：14</li>
+      <li>输入字段 / 提醒条：12 · 搜索框：10</li>
+      <li>打分按钮：12 · chip / 徽标：全圆</li>
+      <li>主按钮高 50 · 打分按钮高 52 · 列表行高 ≥ 44</li>
+      <li>tab bar 高 49 + 安全区 · FAB 52</li>
+      <li>卡片不用阴影，靠背景色层级；只有 FAB 有阴影</li>
+      <li>动效仅限翻面与页面切换</li>
+    </ul>
+  </div>
+
+  <div class="sp">
+    <h4>组件</h4>
+    <div class="demo">
+      <div class="btn">主按钮</div>
+      <div class="btn sec">次要按钮</div>
+      <div class="grades"><div class="g g1">忘了<small>10 分钟</small></div><div class="g g2">困难<small>2 天</small></div><div class="g g3">记得<small>5 天</small></div><div class="g g4">简单<small>12 天</small></div></div>
+      <div class="chips"><span class="chip on">中 → 英</span><span class="chip on">例句挖空</span><span class="chip">英 → 中</span><span class="chip off">置灰</span></div>
+      <div class="fld"><div class="lb">例句 · 点词改挖空</div><div class="v">I have some <span class="hl">concerns</span> about the timeline.</div></div>
+      <div class="fld"><div class="lb">挖空显示</div><div class="v">I have some <span class="blank" style="min-width:60px"></span> about the timeline.</div></div>
+      <div class="row" style="padding:10px 12px"><div><div class="t">列表行</div><div class="s">副标题</div></div><span class="chev">›</span></div>
+    </div>
+  </div>
+
+</div>
+
+</main>
+</body>
+</html>
