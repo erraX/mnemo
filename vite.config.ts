@@ -11,7 +11,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
+      // globPatterns 已覆盖 manifest 图标，关掉自动追加避免预缓存重复条目
+      includeManifestIcons: false,
       manifest: {
         name: 'Mnemo',
         short_name: 'Mnemo',
@@ -30,7 +31,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cacheId: 'mnemo',
         globPatterns: ['**/*.{js,css,html,svg,png,ico,json,woff2}'],
+        // 词典文件名已含内容 hash，不加 __WB_REVISION__，让预缓存复用页面自己的 HTTP 缓存
+        dontCacheBustURLsMatching: /ecdict\.[0-9a-f]{8}\.json$/,
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
         navigateFallback: '/mnemo/index.html',
         runtimeCaching: [
