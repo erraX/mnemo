@@ -3,7 +3,7 @@ import { createTestDb } from '@/test/db'
 import { nextLearningDayStart } from '@/lib/day'
 import { createScheduler } from '@/lib/scheduler'
 import {
-  addExtraNewToday, createNote, deleteNote, findDuplicate, getSettings, getTodayCounts, getTodayQueue,
+  addExtraNewToday, createNote, deleteNote, findDuplicate, getSettings, getTodayCounts, getTodayQueue, getTodayReviewStats,
   gradeCard, headwordKey, planNoteUpdate, undoLastReview, updateNote, updateSettings,
 } from './repo'
 
@@ -159,6 +159,18 @@ describe('settings and counts', () => {
     expect((await getSettings(db)).newCardsPerDay).toBe(20)
     await updateSettings(db, { newCardsPerDay: 5, accent: 'uk' })
     expect(await getSettings(db)).toMatchObject({ newCardsPerDay: 5, accent: 'uk', autoPlayOnReveal: true })
+  })
+
+  it('getTodayReviewStats counts today\'s logs and first-time grades only', async () => {
+    const db = createTestDb()
+    const a = await createNote(db, { ...input, headword: 'a', enabledTypes: ['en2zh'] }, NOW - MIN, sched)
+    const b = await createNote(db, { ...input, headword: 'b', enabledTypes: ['en2zh'] }, NOW - MIN, sched)
+    const [ca] = await db.cards.where('noteId').equals(a.id).toArray()
+    const [cb] = await db.cards.where('noteId').equals(b.id).toArray()
+    await gradeCard(db, ca!.id, 3, local(2026, 10, 29, 23), sched) // 昨天的学习日
+    await gradeCard(db, ca!.id, 3, NOW, sched)                      // 今天，但不是新卡
+    await gradeCard(db, cb!.id, 3, NOW, sched)                      // 今天的新卡
+    expect(await getTodayReviewStats(db, NOW)).toEqual({ reviewed: 2, learned: 1 })
   })
 
   it('getTodayCounts applies the new-card limit and extra allowance for today only', async () => {

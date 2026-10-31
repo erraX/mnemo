@@ -197,6 +197,12 @@ export async function getTodayQueue(db: MnemoDB, now = Date.now()): Promise<Card
   return [...p.learning, ...p.review, ...p.fresh]
 }
 
+/** 完成页用：今日学习日内的打分次数和其中第一次打分的新卡数 */
+export async function getTodayReviewStats(db: MnemoDB, now = Date.now()): Promise<{ reviewed: number; learned: number }> {
+  const logs = await db.reviewLogs.where('reviewedAt').aboveOrEqual(learningDayStart(now)).toArray()
+  return { reviewed: logs.length, learned: countNewIntroduced(logs, now) }
+}
+
 export async function getTodayCounts(db: MnemoDB, now = Date.now()): Promise<{ due: number; fresh: number }> {
   const p = await getTodayParts(db, now)
   return { due: p.learning.length + p.review.length, fresh: p.fresh.length }

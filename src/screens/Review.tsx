@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, us
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router'
 import { db } from '@/db/db'
-import { addExtraNewToday, getSettings, getTodayQueue, gradeCard, undoLastReview } from '@/db/repo'
+import { addExtraNewToday, getSettings, getTodayQueue, getTodayReviewStats, gradeCard, undoLastReview } from '@/db/repo'
 import { DEFAULT_SETTINGS, type Rating } from '@/domain/types'
 import { scheduler } from '@/lib/scheduler'
 import { afterGrade, afterUndo, continueAfterBreather, elapsedMinutes, initialSession, reveal, withQueue } from '@/lib/session'
@@ -32,6 +32,10 @@ export function Review() {
   const note = noteLoaded ? noteResult.note : undefined
 
   const requery = useCallback(() => getTodayQueue(db), [])
+
+  // 完成页显示的是今日完成数（规格 §5.6），不是本次会话：编辑往返、重新进入都不丢；撤销通过 liveQuery 同步
+  const isDone = session.phase === 'done'
+  const todayStats = useLiveQuery(() => (isDone ? getTodayReviewStats(db) : undefined), [isDone])
 
   useEffect(() => {
     let cancelled = false
@@ -109,8 +113,8 @@ export function Review() {
   } else if (session.phase === 'done' || !current) {
     body = (
       <DonePage
-        reviewed={session.stats.reviewed}
-        learned={session.stats.learned}
+        reviewed={todayStats?.reviewed ?? session.stats.reviewed}
+        learned={todayStats?.learned ?? session.stats.learned}
         minutes={elapsedMinutes(session, Date.now())}
         onMore={() => void onMore()}
         onHome={() => navigate('/')}
@@ -165,7 +169,7 @@ export function Review() {
   return (
     <>
       {body}
-      {toast && <div className="pointer-events-none fixed inset-x-0 bottom-28 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
+      {toast && <div className="pointer-events-none fixed inset-x-0 bottom-44 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
     </>
   )
 }

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { db } from '@/db/db'
-import { createNote } from '@/db/repo'
+import { createNote, gradeCard } from '@/db/repo'
 import { renderWithRouter } from '@/test/render'
 import { Review } from './Review'
 
@@ -44,14 +44,27 @@ describe('Review', () => {
   })
 
   it('undo restores the card and the counter', async () => {
+    // 今天早些时候已经复习过一张（不在本次会话里）：完成页计数要算上它
+    const earlier = await createNote(db, { headword: 'earlier', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)
+    const [earlierCard] = await db.cards.where('noteId').equals(earlier.id).toArray()
+    await gradeCard(db, earlierCard!.id, 4)
     await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
     renderWithRouter(<Review />, { route: '/review', path: '/review' })
     fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
     fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
     await screen.findByText('今天的复习完成了')
+    await waitFor(() => expect(screen.getByText('2', { selector: '[data-stat="reviewed"]' })).toBeTruthy())
+    expect(screen.getByText('2', { selector: '[data-stat="learned"]' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '撤销上一步' }))
     await screen.findByRole('button', { name: '看答案' })
-    expect(await db.reviewLogs.count()).toBe(0)
+    expect(await db.reviewLogs.count()).toBe(1)
+
+    // 计数来自今日日志：撤销后再打一次仍是 2，不是会话累计
+    fireEvent.click(screen.getByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    await screen.findByText('今天的复习完成了')
+    await waitFor(() => expect(screen.getByText('2', { selector: '[data-stat="reviewed"]' })).toBeTruthy())
+    expect(await db.reviewLogs.count()).toBe(2)
   })
 
   it('shows a breather after 20 grades when cards remain', async () => {
