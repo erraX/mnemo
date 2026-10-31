@@ -151,7 +151,7 @@ describe('Cards bulk management', () => {
     fireEvent.click(confirm)
     await screen.findByText('已删除 305 个单词、915 张卡、0 条复习记录', {}, { timeout: 5000 })
     expect(await db.notes.toArray()).toEqual([other])
-  })
+  }, 15_000) // 300+ 行的可访问性查询和 IndexedDB 级联删除在 CI runner 上需要更长时间。
 
   it('invalidates previews when either the selection or the type changes', async () => {
     await createNote(db, input)
