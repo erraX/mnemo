@@ -60,6 +60,32 @@ describe('examples and cloze detection', () => {
     expect(s3.examples[0]!.manual).toBe(true)
     expect(s3.examples[0]!.blanks).toEqual([{ start: 2, end: 6 }])
   })
+  describe('manual blanks follow text edits', () => {
+    const note: Note = {
+      id: 'n1', headword: 'concern', headwordKey: 'concern', meaning: 'm',
+      examples: [{ text: 'I have some concerns.', blanks: [{ start: 12, end: 20 }] }],
+      tags: [], enabledTypes: ['cloze'], createdAt: 1, updatedAt: 1,
+    }
+    const loaded = initialForm([...ALL], note)
+    const exId = loaded.examples[0]!.id
+
+    it('shifts a manual blank when text is inserted before it', () => {
+      const s = reduceForm(loaded, { type: 'exampleText', id: exId, value: 'Well, I have some concerns.' })
+      expect(s.examples[0]!.blanks).toEqual([{ start: 18, end: 26 }])
+      expect(s.examples[0]!.manual).toBe(true)
+    })
+    it('re-detects and drops manual when the blanked word is deleted', () => {
+      const s = reduceForm(loaded, { type: 'exampleText', id: exId, value: 'I have some.' })
+      expect(s.examples[0]!.blanks).toEqual([])
+      expect(s.examples[0]!.manual).toBe(false)
+    })
+    it('keeps a manual blank unchanged when text after it is edited', () => {
+      const s = reduceForm(loaded, { type: 'exampleText', id: exId, value: 'I have some concerns.!' })
+      expect(s.examples[0]!.blanks).toEqual([{ start: 12, end: 20 }])
+      expect(s.examples[0]!.manual).toBe(true)
+    })
+  })
+
   it('removes examples and edits sources', () => {
     const s1 = reduceForm(base, { type: 'exampleSource', id: id(), value: 'The Economist' })
     expect(s1.examples[0]!.source).toBe('The Economist')

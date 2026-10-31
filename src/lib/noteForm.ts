@@ -1,7 +1,7 @@
 import type { NoteInput } from '@/db/repo'
 import { CARD_TYPES, type Blank, type CardType, type DictEntry, type Note } from '@/domain/types'
 import { availableTypes, filterEnabled } from './cardTypes'
-import { detectBlanks } from './cloze'
+import { detectBlanks, tokenize } from './cloze'
 
 export interface ExampleDraft {
   id: string
@@ -63,6 +63,35 @@ function redetect(examples: ExampleDraft[], headword: string, forms: string[]): 
   return examples.map((e) => (e.manual ? e : { ...e, blanks: detectBlanks(e.text, headword, forms) }))
 }
 
+/**
+ * 手动挖空按字符偏移保存，改文字后要跟着移动：未改动前缀里的保留，后缀里的按长度差平移，
+ * 落在改动区间内的丢弃；最后只留下仍与新文本某个词完全重合的。一个都不剩就退回自动检测。
+ */
+function realignManualBlanks(oldText: string, newText: string, blanks: Blank[]): Blank[] {
+  const oldLen = oldText.length
+  const newLen = newText.length
+  let p = 0
+  while (p < oldLen && p < newLen && oldText[p] === newText[p]) p += 1
+  let q = 0
+  while (q < oldLen - p && q < newLen - p && oldText[oldLen - 1 - q] === newText[newLen - 1 - q]) q += 1
+  const delta = newLen - oldLen
+  const editedEnd = oldLen - q
+  const moved: Blank[] = []
+  for (const b of blanks) {
+    if (b.end <= p) moved.push(b)
+    else if (b.start >= editedEnd) moved.push({ start: b.start + delta, end: b.end + delta })
+  }
+  const words = tokenize(newText).filter((t) => t.isWord)
+  return moved.filter((b) => words.some((t) => t.start === b.start && t.end === b.end))
+}
+
+function withExampleText(e: ExampleDraft, value: string, headword: string, forms: string[]): ExampleDraft {
+  if (!e.manual) return { ...e, text: value, blanks: detectBlanks(value, headword, forms) }
+  const kept = realignManualBlanks(e.text, value, e.blanks)
+  if (kept.length > 0) return { ...e, text: value, blanks: kept }
+  return { ...e, text: value, blanks: detectBlanks(value, headword, forms), manual: false }
+}
+
 export function reduceForm(s: NoteFormState, a: NoteFormAction): NoteFormState {
   switch (a.type) {
     case 'reset':
@@ -94,11 +123,7 @@ export function reduceForm(s: NoteFormState, a: NoteFormAction): NoteFormState {
     case 'removeExample':
       return { ...s, examples: s.examples.filter((e) => e.id !== a.id) }
     case 'exampleText':
-      return {
-        ...s,
-        examples: s.examples.map((e) =>
-          e.id !== a.id ? e : { ...e, text: a.value, blanks: e.manual ? e.blanks : detectBlanks(a.value, s.headword, s.dict.forms) }),
-      }
+      return { ...s, examples: s.examples.map((e) => (e.id !== a.id ? e : withExampleText(e, a.value, s.headword, s.dict.forms))) }
     case 'exampleSource':
       return { ...s, examples: s.examples.map((e) => (e.id === a.id ? { ...e, source: a.value } : e)) }
     case 'exampleBlanks':
