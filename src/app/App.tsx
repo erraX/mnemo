@@ -1,9 +1,10 @@
-import { HashRouter, Outlet, Route, Routes } from 'react-router'
+import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
 import { NoteEditor } from '@/screens/NoteEditor'
 import { Placeholder } from '@/screens/Placeholder'
+import { Review } from '@/screens/Review'
 import { SettingsStub } from '@/screens/SettingsStub'
 import { Today } from '@/screens/Today'
 import { AudioSpike } from '@/spikes/AudioSpike'
@@ -18,17 +19,18 @@ function WithTabs() {
   )
 }
 
-export function App() {
+function Shell() {
   const dict = useDictLoader()
+  const { pathname } = useLocation()
   return (
-    <HashRouter>
+    <>
       <Routes>
         <Route element={<WithTabs />}>
           <Route path="/" element={<Today dict={dict} />} />
           <Route path="/cards" element={<Placeholder title="卡片" />} />
           <Route path="/settings" element={<SettingsStub />} />
         </Route>
-        <Route path="/review" element={<Placeholder title="复习" />} />
+        <Route path="/review" element={<Review />} />
         <Route path="/inbox" element={<Placeholder title="收集箱" />} />
         <Route path="/note/new" element={<NoteEditor />} />
         <Route path="/note/:id" element={<NoteEditor />} />
@@ -36,7 +38,15 @@ export function App() {
         <Route path="/spike/tts" element={<TtsSpike />} />
         <Route path="*" element={<Placeholder title="未找到" />} />
       </Routes>
-      <UpdatePrompt />
+      {pathname !== '/review' && <UpdatePrompt />}
+    </>
+  )
+}
+
+export function App() {
+  return (
+    <HashRouter>
+      <Shell />
     </HashRouter>
   )
 }

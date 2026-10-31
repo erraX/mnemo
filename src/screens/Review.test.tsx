@@ -1,0 +1,70 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen } from '@testing-library/react'
+import { db } from '@/db/db'
+import { createNote } from '@/db/repo'
+import { renderWithRouter } from '@/test/render'
+import { Review } from './Review'
+
+const play = vi.fn(async () => 'youdao' as const)
+vi.mock('@/app/useAudio', () => ({ useAudio: () => ({ accent: 'us', play, prefetch: vi.fn(async () => undefined) }) }))
+
+beforeEach(async () => { await db.delete(); await db.open(); play.mockClear() })
+afterEach(() => vi.restoreAllMocks())
+
+describe('Review', () => {
+  it('reveals, grades, auto-plays on reveal, and reaches the done page', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    await screen.findByRole('button', { name: '看答案' })
+    expect(screen.getByText('剩余 1')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '看答案' }))
+    expect(play).toHaveBeenCalledWith('concern')
+    const easy = await screen.findByRole('button', { name: /简单/ })
+    expect(easy.textContent).toMatch(/天/)
+    fireEvent.click(easy)
+    await screen.findByText('今天的复习完成了')
+    expect(screen.getByText('1', { selector: '[data-stat="reviewed"]' })).toBeTruthy()
+    expect(await db.reviewLogs.count()).toBe(1)
+  })
+
+  it('undo restores the card and the counter', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    await screen.findByText('今天的复习完成了')
+    fireEvent.click(screen.getByRole('button', { name: '撤销上一步' }))
+    await screen.findByRole('button', { name: '看答案' })
+    expect(await db.reviewLogs.count()).toBe(0)
+  })
+
+  it('shows a breather after 20 grades when cards remain', async () => {
+    await db.settings.put({ id: 'settings', newCardsPerDay: 30, accent: 'us', autoPlayOnReveal: false, lastEnabledTypes: ['en2zh'] })
+    for (let i = 0; i < 21; i += 1) {
+      await createNote(db, { headword: `w${i}`, meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - (21 - i) * 1000)
+    }
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    for (let i = 0; i < 20; i += 1) {
+      fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+      fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    }
+    await screen.findByText('已复习 20 张')
+    expect(screen.getByText('还剩 1 张')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '继续' }))
+    await screen.findByRole('button', { name: '看答案' })
+  })
+
+  it('"再学 10 张新卡" pulls cards beyond the daily limit', async () => {
+    await db.settings.put({ id: 'settings', newCardsPerDay: 1, accent: 'us', autoPlayOnReveal: false, lastEnabledTypes: ['en2zh'] })
+    await createNote(db, { headword: 'a', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)
+    await createNote(db, { headword: 'b', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 1000)
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    await screen.findByText('今天的复习完成了')
+    fireEvent.click(screen.getByRole('button', { name: '再学 10 张新卡' }))
+    await screen.findByRole('button', { name: '看答案' })
+    expect(screen.getByText('剩余 1')).toBeTruthy()
+  })
+})
