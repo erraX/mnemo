@@ -50,13 +50,15 @@ export function Review() {
     return () => { cancelled = true }
   }, [requery, loadAttempt])
 
-  // 回到前台时到期集可能已变（跨天 / 在其他标签页改过）；正在答题（已翻面）时不打断
+  // 回到前台时到期集可能已变（跨天 / 在其他标签页改过）；正在答题（已翻面）、休息页、正在写库时不打断
   const sessionRef = useRef(session)
   sessionRef.current = session
+  const busyRef = useRef(busy)
+  busyRef.current = busy
   useEffect(() => {
     if (tick === 0) return
     const s = sessionRef.current
-    if (s.phase === 'loading' || s.revealed) return
+    if (s.phase === 'loading' || s.phase === 'breather' || s.revealed || busyRef.current) return
     let cancelled = false
     requery()
       .then((q) => { if (!cancelled) setSession((cur) => (cur.revealed ? cur : withQueue(cur, q))) })
@@ -92,11 +94,22 @@ export function Review() {
     if (!current || busy) return
     setBusy(true)
     try {
-      const { log } = await gradeCard(db, current.id, rating)
-      const queue = await requery()
-      setSession((s) => afterGrade(s, { wasNew: log.state === 0, queue }))
-    } catch {
-      setToast('操作失败，请重试')
+      let wasNew: boolean
+      try {
+        const { log } = await gradeCard(db, current.id, rating)
+        wasNew = log.state === 0
+      } catch {
+        setToast('操作失败，请重试')
+        return
+      }
+      // 打分已落库；重查队列失败时本地出队，避免同一张被重复打分
+      try {
+        const queue = await requery()
+        setSession((s) => afterGrade(s, { wasNew, queue }))
+      } catch {
+        setSession((s) => afterGrade(s, { wasNew, queue: s.queue.slice(1) }))
+        setToast('已记录，刷新队列失败')
+      }
     } finally {
       setBusy(false)
     }

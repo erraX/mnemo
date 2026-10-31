@@ -121,3 +121,46 @@ describe('Review errors', () => {
     expect(await db.reviewLogs.count()).toBe(0)
   })
 })
+
+describe('Review foreground re-query', () => {
+  function becomeVisible() {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+
+  it('keeps the breather page when the app returns to the foreground', async () => {
+    await db.settings.put({ id: 'settings', newCardsPerDay: 30, accent: 'us', autoPlayOnReveal: false, lastEnabledTypes: ['en2zh'] })
+    for (let i = 0; i < 21; i += 1) {
+      await createNote(db, { headword: `w${i}`, meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - (21 - i) * 1000)
+    }
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    for (let i = 0; i < 20; i += 1) {
+      fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+      fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    }
+    await screen.findByText('已复习 20 张')
+    const queueSpy = vi.spyOn(repo, 'getTodayQueue')
+    becomeVisible()
+    await new Promise((r) => setTimeout(r, 50))
+    expect(queueSpy).not.toHaveBeenCalled()
+    expect(screen.getByText('已复习 20 张')).toBeTruthy()
+  })
+})
+
+describe('Review requery failure after a saved grade', () => {
+  it('advances locally and says the grade was recorded', async () => {
+    await createNote(db, { headword: 'a', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)
+    await createNote(db, { headword: 'b', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 1000)
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    expect(screen.getByText('剩余 2')).toBeTruthy()
+    vi.spyOn(repo, 'getTodayQueue').mockRejectedValueOnce(new Error('boom'))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    expect(await screen.findByText('已记录，刷新队列失败')).toBeTruthy()
+    expect(await db.reviewLogs.count()).toBe(1)
+    expect(screen.getByText('剩余 1')).toBeTruthy()
+    expect(screen.queryByText('操作失败，请重试')).toBeNull()
+  })
+})
