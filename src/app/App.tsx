@@ -1,13 +1,14 @@
 import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
+import { useOnlinePrefetch } from './useOnlinePrefetch'
 import { TabBar } from '@/components/TabBar'
 import { Inbox } from '@/screens/Inbox'
 import { NoteEditorRoute } from '@/screens/NoteEditor'
 import { Cards } from '@/screens/Cards'
 import { Placeholder } from '@/screens/Placeholder'
 import { Review } from '@/screens/Review'
-import { SettingsStub } from '@/screens/SettingsStub'
+import { Settings } from '@/screens/Settings'
 import { Today } from '@/screens/Today'
 import { AudioSpike } from '@/spikes/AudioSpike'
 import { TtsSpike } from '@/spikes/TtsSpike'
@@ -23,6 +24,7 @@ function WithTabs() {
 
 function Shell() {
   const dict = useDictLoader()
+  useOnlinePrefetch()
   const { pathname } = useLocation()
   return (
     <>
@@ -30,7 +32,7 @@ function Shell() {
         <Route element={<WithTabs />}>
           <Route path="/" element={<Today dict={dict} />} />
           <Route path="/cards" element={<Cards />} />
-          <Route path="/settings" element={<SettingsStub />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="/review" element={<Review />} />
         <Route path="/inbox" element={<Inbox />} />
