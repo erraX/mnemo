@@ -3,8 +3,8 @@ import { createTestDb } from '@/test/db'
 import { nextLearningDayStart } from '@/lib/day'
 import { createScheduler } from '@/lib/scheduler'
 import {
-  addExtraNewToday, createNote, deleteNote, findDuplicate, getSettings, getTodayCounts, getTodayQueue, getTodayReviewStats,
-  gradeCard, headwordKey, planNoteUpdate, undoLastReview, updateNote, updateSettings,
+  addDrafts, addExtraNewToday, allTags, createNote, deleteNote, deleteDraft, findDuplicate, getSettings, getTodayCounts, getTodayQueue, getTodayReviewStats,
+  gradeCard, headwordKey, planNoteUpdate, searchNotes, undoLastReview, updateNote, updateSettings,
 } from './repo'
 
 const local = (y: number, m: number, d: number, h: number, min = 0) => new Date(y, m - 1, d, h, min).getTime()
@@ -182,5 +182,56 @@ describe('settings and counts', () => {
     await addExtraNewToday(db, 10, NOW)
     expect(await getTodayCounts(db, NOW)).toEqual({ due: 0, fresh: 2 })
     expect(await getTodayCounts(db, local(2026, 10, 31, 9))).toEqual({ due: 0, fresh: 1 })
+  })
+})
+
+describe('drafts', () => {
+  it('addDrafts stores lines, skips case-insensitive duplicates of existing drafts, keeps order', async () => {
+    const db = createTestDb()
+    await addDrafts(db, [{ raw: 'concern', kind: 'headword' }], NOW)
+    const added = await addDrafts(db, [{ raw: 'Concern', kind: 'headword' }, { raw: 'I have concerns.', kind: 'sentence' }], NOW + 1)
+    expect(added.map((d) => d.raw)).toEqual(['I have concerns.'])
+    const all = await db.drafts.orderBy('createdAt').toArray()
+    expect(all.map((d) => d.raw)).toEqual(['concern', 'I have concerns.'])
+  })
+  it('createNote with draftId deletes the draft in the same transaction', async () => {
+    const db = createTestDb()
+    const [d] = await addDrafts(db, [{ raw: 'concern', kind: 'headword' }], NOW)
+    await createNote(db, { ...input, enabledTypes: ['en2zh'] }, NOW, sched, { draftId: d!.id })
+    expect(await db.drafts.count()).toBe(0)
+    expect(await db.notes.count()).toBe(1)
+  })
+  it('deleteDraft removes one draft', async () => {
+    const db = createTestDb()
+    const [a, b] = await addDrafts(db, [{ raw: 'a', kind: 'headword' }, { raw: 'b', kind: 'headword' }], NOW)
+    await deleteDraft(db, a!.id)
+    expect((await db.drafts.toArray()).map((d) => d.id)).toEqual([b!.id])
+  })
+})
+
+describe('searchNotes / allTags', () => {
+  it('matches headword, meaning and example text case-insensitively, newest first', async () => {
+    const db = createTestDb()
+    await createNote(db, { ...input, headword: 'leverage', meaning: '杠杆', examples: [], tags: ['biz'], enabledTypes: ['en2zh'] }, NOW, sched)
+    await createNote(db, { ...input, headword: 'concern', meaning: 'n. 担忧', tags: ['cet4', 'biz'], enabledTypes: ['en2zh'] }, NOW + 1, sched)
+    expect((await searchNotes(db, '')).map((n) => n.headword)).toEqual(['concern', 'leverage'])
+    expect((await searchNotes(db, 'CONC')).map((n) => n.headword)).toEqual(['concern'])
+    expect((await searchNotes(db, '杠杆')).map((n) => n.headword)).toEqual(['leverage'])
+    expect((await searchNotes(db, 'have concerns')).map((n) => n.headword)).toEqual(['concern'])
+    expect(await searchNotes(db, 'zzz')).toEqual([])
+    expect(await allTags(db)).toEqual([{ tag: 'biz', count: 2 }, { tag: 'cet4', count: 1 }])
+  })
+})
+
+describe('updateNote burying when types are swapped in one save', () => {
+  it('buries the replacement card even though the graded card and its log are deleted in the same save', async () => {
+    const db = createTestDb()
+    const note = await createNote(db, { ...input, enabledTypes: ['en2zh'] }, NOW, sched)
+    const [card] = await db.cards.where('noteId').equals(note.id).toArray()
+    await gradeCard(db, card!.id, 3, NOW, sched)
+    await updateNote(db, note.id, { ...input, enabledTypes: ['zh2en'] }, NOW + MIN, sched, ['en2zh'])
+    const [zh] = await db.cards.where('noteId').equals(note.id).toArray()
+    expect(zh!.type).toBe('zh2en')
+    expect(zh!.buriedUntil).toBe(nextLearningDayStart(NOW))
   })
 })

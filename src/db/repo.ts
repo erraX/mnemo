@@ -1,5 +1,6 @@
 import type { MnemoDB } from './db'
-import { DEFAULT_SETTINGS, type Card, type CardType, type Example, type Note, type Rating, type ReviewLog, type Settings } from '@/domain/types'
+import { DEFAULT_SETTINGS, type Card, type CardType, type Draft, type Example, type Note, type Rating, type ReviewLog, type Settings } from '@/domain/types'
+import type { DraftKind } from '@/lib/inbox'
 import { diffTypes, filterEnabled } from '@/lib/cardTypes'
 import { learningDayStart, nextLearningDayStart } from '@/lib/day'
 import { buildQueueParts, countNewIntroduced, type QueueParts } from '@/lib/queue'
@@ -30,7 +31,9 @@ function normalizeInput(input: NoteInput): NoteInput {
   }
 }
 
-export async function createNote(db: MnemoDB, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler): Promise<Note> {
+export async function createNote(
+  db: MnemoDB, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler, opts: { draftId?: string } = {},
+): Promise<Note> {
   const input = normalizeInput(raw)
   const note: Note = {
     id: crypto.randomUUID(),
@@ -44,10 +47,11 @@ export async function createNote(db: MnemoDB, raw: NoteInput, now = Date.now(), 
     createdAt: now,
     updatedAt: now,
   }
-  await db.transaction('rw', db.notes, db.cards, db.settings, async () => {
+  await db.transaction('rw', db.notes, db.cards, db.settings, db.drafts, async () => {
     await db.notes.add(note)
     await db.cards.bulkAdd(input.enabledTypes.map((t) => sched.newCard(note.id, t, now)))
     await updateSettings(db, { lastEnabledTypes: raw.enabledTypes })
+    if (opts.draftId) await db.drafts.delete(opts.draftId)
   })
   return note
 }
@@ -71,15 +75,17 @@ export async function updateNote(
     const unconfirmed = toDelete.filter((t) => !confirmDelete.includes(t))
     if (unconfirmed.length) throw new Error(`需要确认删除卡型：${unconfirmed.join(', ')}`)
 
+    // 该记录今天已经出过一张（有兄弟被埋或今日有打分日志）时，新增的卡也埋到明天，否则同一记录今天会出第二张
+    // 必须在删除 doomed 卡/日志之前计算，否则查不到刚删掉的日志
+    const shownToday = cards.some((c) => c.buriedUntil !== undefined && c.buriedUntil > now)
+      || (await db.reviewLogs.where('noteId').equals(id).filter((l) => l.reviewedAt >= learningDayStart(now)).count()) > 0
+
     const doomed = cards.filter((c) => toDelete.includes(c.type)).map((c) => c.id)
     if (doomed.length) {
       await db.reviewLogs.where('cardId').anyOf(doomed).delete()
       await db.cards.bulkDelete(doomed)
     }
     if (toCreate.length) {
-      // 该记录今天已经出过一张（有兄弟被埋或今日有打分日志）时，新增的卡也埋到明天，否则同一记录今天会出第二张
-      const shownToday = cards.some((c) => c.buriedUntil !== undefined && c.buriedUntil > now)
-        || (await db.reviewLogs.where('noteId').equals(id).filter((l) => l.reviewedAt >= learningDayStart(now)).count()) > 0
       const bury = shownToday ? { buriedUntil: nextLearningDayStart(now) } : {}
       await db.cards.bulkAdd(toCreate.map((t) => ({ ...sched.newCard(id, t, now), ...bury })))
     }
@@ -206,4 +212,39 @@ export async function getTodayReviewStats(db: MnemoDB, now = Date.now()): Promis
 export async function getTodayCounts(db: MnemoDB, now = Date.now()): Promise<{ due: number; fresh: number }> {
   const p = await getTodayParts(db, now)
   return { due: p.learning.length + p.review.length, fresh: p.fresh.length }
+}
+
+export async function addDrafts(db: MnemoDB, lines: Array<{ raw: string; kind: DraftKind }>, now = Date.now()): Promise<Draft[]> {
+  return db.transaction('rw', db.drafts, async () => {
+    const existing = new Set((await db.drafts.toArray()).map((d) => d.raw.toLowerCase()))
+    const fresh: Draft[] = []
+    lines.forEach((l, i) => {
+      const key = l.raw.toLowerCase()
+      if (existing.has(key)) return
+      existing.add(key)
+      fresh.push({ id: crypto.randomUUID(), raw: l.raw, kind: l.kind, createdAt: now + i })
+    })
+    if (fresh.length) await db.drafts.bulkAdd(fresh)
+    return fresh
+  })
+}
+
+export async function deleteDraft(db: MnemoDB, id: string): Promise<void> {
+  await db.drafts.delete(id)
+}
+
+export async function searchNotes(db: MnemoDB, query: string, limit = 300): Promise<Note[]> {
+  const q = query.trim().toLowerCase()
+  const all = await db.notes.orderBy('updatedAt').reverse().toArray()
+  const hits = q
+    ? all.filter((n) =>
+        n.headwordKey.includes(q) || n.meaning.toLowerCase().includes(q) || n.examples.some((e) => e.text.toLowerCase().includes(q)))
+    : all
+  return hits.slice(0, limit)
+}
+
+export async function allTags(db: MnemoDB): Promise<Array<{ tag: string; count: number }>> {
+  const counts = new Map<string, number>()
+  for (const n of await db.notes.toArray()) for (const t of n.tags) counts.set(t, (counts.get(t) ?? 0) + 1)
+  return Array.from(counts, ([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
 }

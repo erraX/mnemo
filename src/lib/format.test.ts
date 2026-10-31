@@ -24,3 +24,18 @@ describe('minutesBetween', () => {
     expect(minutesBetween(NOW, NOW + 10_000)).toBe(1)
   })
 })
+
+import type { Card } from '@/domain/types'
+import { noteDueSummary } from './format'
+
+describe('noteDueSummary', () => {
+  const card = (p: Partial<Card>): Card => ({
+    id: 'c', noteId: 'n', type: 'en2zh', due: NOW, stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0,
+    learning_steps: 0, reps: 0, lapses: 0, state: 2, createdAt: NOW, ...p,
+  })
+  it('uses the earliest-due card', () => {
+    expect(noteDueSummary([], NOW)).toBe('—')
+    expect(noteDueSummary([card({ due: local(2026, 11, 3, 9) }), card({ due: local(2026, 11, 1, 9) })], NOW)).toBe('明天')
+    expect(noteDueSummary([card({ state: 0, due: NOW - 1000 }), card({ due: local(2026, 11, 3, 9) })], NOW)).toBe('新')
+  })
+})

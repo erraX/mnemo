@@ -1,10 +1,17 @@
-import type { FsrsState } from '@/domain/types'
+import type { Card, FsrsState } from '@/domain/types'
 import { learningDayStart } from './day'
 
 const DAY = 86_400_000
 
 export function minutesBetween(a: number, b: number): number {
   return Math.max(1, Math.round(Math.abs(b - a) / 60_000))
+}
+
+/** 卡片列表每行的"最近到期"：取 due 最小的那张卡 */
+export function noteDueSummary(cards: Card[], now: number): string {
+  if (cards.length === 0) return '—'
+  const soonest = cards.reduce((a, b) => (b.due < a.due ? b : a))
+  return dueLabel(soonest.due, soonest.state, now)
 }
 
 /** 卡片列表 / 背面用的到期文案 */
