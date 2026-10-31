@@ -33,7 +33,7 @@
 - 牌组（deck）
 - LLM 补全释义和例句
 - 真人发音源（Merriam-Webster、Forvo 等）
-- Anki `.apkg` / TSV 导入导出
+- Anki `.apkg` / 通用 TSV 导入导出（后续新增 Vocably CSV/TSV 专用追加导入，见 `2026-10-31-vocabulary-import-design.md`）
 - 统计图表
 - 推送提醒
 - 桌面端布局优化
@@ -290,7 +290,8 @@ interface Settings {         // 单例
 | 建卡 / 编辑 | 5.4，全屏 sheet |
 | 收集箱 | 5.5 |
 | 卡片 | 记录列表（按更新时间倒序），顶部搜索（匹配 headword / 释义 / 例句），点开编辑；删除在编辑页底部；每条显示 headword、释义首行、已启用卡型小图标、下次到期 |
-| 设置 | 每日新卡上限、口音、翻面自动朗读、备份 / 恢复、关于（版本、ECDICT 署名、ts-fsrs 署名） |
+| 设置 | 每日新卡上限、口音、翻面自动朗读、导入词库、备份 / 恢复、关于（版本、ECDICT 署名、ts-fsrs 署名） |
+| 导入词库 | 独立页面，设置进入；识别 Vocably CSV/TSV → 预览 → 确认追加；已有词跳过，不改旧排期。规则见 `2026-10-31-vocabulary-import-design.md` |
 
 ### 5.12 视觉
 

@@ -36,7 +36,7 @@
 
 ### Task 1: Format parsing and mapping
 
-- [ ] Write failing tests in `src/lib/vocabularyImport.test.ts`. Representative test:
+- [x] Write failing tests in `src/lib/vocabularyImport.test.ts`. Representative test:
 
 ```ts
 const text = 'Word/Phrase\tTranslation\tIPA\tExample\nconcern\t担忧\tkən\t"* I have concerns.\n* A concern."'
@@ -46,15 +46,15 @@ expect(parsed.entries[0]?.examples.map(e => e.text)).toEqual(['I have concerns.'
 expect(parsed.entries[0]?.enabledTypes).toEqual(['zh2en', 'cloze', 'en2zh'])
 ```
 
-- [ ] `pnpm exec vitest run src/lib/vocabularyImport.test.ts` must fail before implementation.
-- [ ] Move dependency with `pnpm add csv-parse@^7.0.3`. Import `parse` from `csv-parse/browser/esm/sync`.
-- [ ] Parse delimiter by reading first record with `to: 1` for Tab/comma and recognizing the required header pair. Parse full table with `bom: true`, `skip_empty_lines: true`, strict equal columns. Map headers once, trim values, split Example on newlines, strip `*`, `•` or `-` bullet + whitespace, run `detectBlanks`. Use `filterEnabled(input, CARD_TYPES)` for card types. Record invalid rows (empty word/meaning); reject unsupported headers, bad quotes/widths and >10,000 records with Chinese messages. Registry dispatches by table headers so later adapters reuse the pipeline.
-- [ ] Cover CSV quoted comma/quote, BOM/CRLF, phrase blanks, missing optional columns, no valid rows, blank lines, wrong format and row count. Re-run focused tests until green.
-- [ ] Commit parser, tests and dependency files: `feat(import): parse Vocably CSV and TSV with quoted examples`.
+- [x] `pnpm exec vitest run src/lib/vocabularyImport.test.ts` must fail before implementation.
+- [x] Move dependency with `pnpm add csv-parse@^7.0.3`. Import `parse` from `csv-parse/browser/esm/sync`.
+- [x] Parse delimiter by reading first record with `to: 1` for Tab/comma and recognizing the required header pair. Parse full table with `bom: true`, `skip_empty_lines: true`, strict equal columns. Map headers once, trim values, split Example on newlines, strip `*`, `•` or `-` bullet + whitespace, run `detectBlanks`. Use `filterEnabled(input, CARD_TYPES)` for card types. Record invalid rows (empty word/meaning); reject unsupported headers, bad quotes/widths and >10,000 records with Chinese messages. Registry dispatches by table headers so later adapters reuse the pipeline.
+- [x] Cover CSV quoted comma/quote, BOM/CRLF, phrase blanks, missing optional columns, no valid rows, blank lines, wrong format and row count. Re-run focused tests until green.
+- [x] Commit parser, tests and dependency files: `feat(import): parse Vocably CSV and TSV with quoted examples`.
 
 ### Task 2: Atomic append and preview
 
-- [ ] Add failing `src/db/importNotes.test.ts`. Seed/grading an existing `Concern`, preview `[concern, frontier, FRONTIER, guardrails]` must give 2 fresh + 2 skipped. Snapshot notes/cards/logs/settings/drafts before import, confirm original rows unchanged afterward. Re-import same input creates no new rows. Test insertion between preview and confirmation and simultaneous imports of identical words.
+- [x] Add failing `src/db/importNotes.test.ts`. Seed/grading an existing `Concern`, preview `[concern, frontier, FRONTIER, guardrails]` must give 2 fresh + 2 skipped. Snapshot notes/cards/logs/settings/drafts before import, confirm original rows unchanged afterward. Re-import same input creates no new rows. Test insertion between preview and confirmation and simultaneous imports of identical words.
 
 ```ts
 const first = await importNotes(db, inputs, NOW, sched)
@@ -63,26 +63,26 @@ expect((await importNotes(db, inputs, NOW, sched)).notes).toEqual([])
 expect(await db.notes.get(existing.id)).toEqual(existing)
 ```
 
-- [ ] `pnpm exec vitest run src/db/importNotes.test.ts` → FAIL missing exports.
-- [ ] Refactor normalized-note construction into `makeNote(input, now)` without changing createNote behavior. `previewNoteImport` reads existing keys, normalizes inputs, validates nonempty headword/meaning, filters duplicate keys in DB and earlier rows, counts enabled card types. `importNotes` wraps preview and note/card generation in `db.transaction('rw', db.notes, db.cards, ...)`; no external async/network calls inside it. Return only actually inserted notes + skipped + cardCount. Use one timestamp with stable input order.
-- [ ] Inject a scheduler whose `newCard` throws during the batch and assert notes/cards counts and originals unchanged. Set new-card cap 1 and assert `getTodayCounts` still returns fresh 1 after importing several notes. Re-run focused tests and `src/db/repo.test.ts`.
-- [ ] Commit: `feat(import): append notes atomically and skip duplicate headwords`.
+- [x] `pnpm exec vitest run src/db/importNotes.test.ts` → FAIL missing exports.
+- [x] Refactor normalized-note construction into `makeNote(input, now)` without changing createNote behavior. `previewNoteImport` reads existing keys, normalizes inputs, validates nonempty headword/meaning, filters duplicate keys in DB and earlier rows, counts enabled card types. `importNotes` wraps preview and note/card generation in `db.transaction('rw', db.notes, db.cards, ...)`; no external async/network calls inside it. Return only actually inserted notes + skipped + cardCount. Use one timestamp with stable input order.
+- [x] Inject a scheduler whose `newCard` throws during the batch and assert notes/cards counts and originals unchanged. Set new-card cap 1 and assert `getTodayCounts` still returns fresh 1 after importing several notes. Re-run focused tests and `src/db/repo.test.ts`.
+- [x] Commit: `feat(import): append notes atomically and skip duplicate headwords`.
 
 ### Task 3: File selection, preview and confirmation
 
-- [ ] Add failing `Import.test.tsx` using `renderWithRouter` and real exported-format synthetic File values. After file selection assert format/preview counts and `await db.notes.count() === 0`; only a click on 导入 N 条 creates notes. Assert results with card count, duplicate existing preservation, all-duplicates disabled, parse/read errors do not write, failed transaction can retry, invalid rows displayed, and file size guard.
-- [ ] `pnpm exec vitest run src/screens/Import.test.tsx` → FAIL missing screen.
-- [ ] Build screen with return-to-settings Link, single hidden file input in a 44px label, `.csv,.tsv,.txt` + text MIME accept list. Read UTF-8 with File.text(); render summary and first five fresh entries. Keep parsed input separate from DB preview; recheck on commit. Busy guards use synchronous refs as well as disabled controls. Clear prior preview on new selection/error and reset file input value. Render read/parse errors as role alert, progress/results as role status. A ref cleanup prevents acting on stale reads after unmount. Confirmation commit completes even if user navigates away; background prefetch never controls success/failure UI.
-- [ ] Settings adds `Link to="/import"` with 导入词库 and explanatory 只追加，已有词跳过. Router imports screen and registers `/import`. Settings test asserts link.
-- [ ] `pnpm exec vitest run src/screens/Import.test.tsx src/screens/Settings.test.tsx` → PASS. Check production browser route and file flow.
-- [ ] Commit: `feat(import): preview and confirm vocabulary imports from Settings`.
+- [x] Add failing `Import.test.tsx` using `renderWithRouter` and real exported-format synthetic File values. After file selection assert format/preview counts and `await db.notes.count() === 0`; only a click on 导入 N 条 creates notes. Assert results with card count, duplicate existing preservation, all-duplicates disabled, parse/read errors do not write, failed transaction can retry, invalid rows displayed, and file size guard.
+- [x] `pnpm exec vitest run src/screens/Import.test.tsx` → FAIL missing screen.
+- [x] Build screen with return-to-settings Link, single hidden file input in a 44px label, `.csv,.tsv,.txt` + text MIME accept list. Read UTF-8 with File.text(); render summary and first five fresh entries. Keep parsed input separate from DB preview; recheck on commit. Busy guards use synchronous refs as well as disabled controls. Clear prior preview on new selection/error and reset file input value. Render read/parse errors as role alert, progress/results as role status. A ref cleanup prevents acting on stale reads after unmount. Confirmation commit completes even if user navigates away; background prefetch never controls success/failure UI.
+- [x] Settings adds `Link to="/import"` with 导入词库 and explanatory 只追加，已有词跳过. Router imports screen and registers `/import`. Settings test asserts link.
+- [x] `pnpm exec vitest run src/screens/Import.test.tsx src/screens/Settings.test.tsx` → PASS. Check production browser route and file flow.
+- [x] Commit: `feat(import): preview and confirm vocabulary imports from Settings`.
 
 ### Task 4: Acceptance and docs
 
-- [ ] Use a local-only `pnpm exec tsx` script (outside repo) to call parser on `/Users/mni/Downloads/en-2026-10-21.csv`; assert total/valid 113, compare every headword, translation, IPA and example text to raw CSV, calculate expected card total. Do not commit source data.
-- [ ] Document Vocably comma/Tab export, default skip duplicates, new-card schedule, unsupported custom delimiters, ignored fields and distinction from destructive restore in README.
-- [ ] Run `pnpm test && pnpm build`, then inspect diff for private data and unrelated changes. Check test fixtures contain only synthetic/minimal examples.
-- [ ] Mark plan boxes with results. Commit docs: `docs: explain vocabulary import formats and duplicate handling`.
+- [x] Use a local-only `pnpm exec tsx` script (outside repo) to call parser on `/Users/mni/Downloads/en-2026-10-21.csv`; assert total/valid 113, compare every headword, translation, IPA and example text to raw CSV, calculate expected card total. Do not commit source data.
+- [x] Document Vocably comma/Tab export, default skip duplicates, new-card schedule, unsupported custom delimiters, ignored fields and distinction from destructive restore in README.
+- [x] Run `pnpm test && pnpm build`, then inspect diff for private data and unrelated changes. Check test fixtures contain only synthetic/minimal examples.
+- [x] Mark plan boxes with results. Commit docs: `docs: explain vocabulary import formats and duplicate handling`.
 
 ## Self-review
 
