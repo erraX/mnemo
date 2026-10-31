@@ -26,6 +26,17 @@ describe('dictionary fill', () => {
     expect(s.dict.status).toBe('miss')
     expect(s.phonetic).toBe('')
   })
+  it('a miss after a hit clears the unedited phonetic and meaning but keeps user edits', () => {
+    const hit = run(initialForm([...ALL]), { type: 'headword', value: 'concern' }, { type: 'dictResult', result: { entry: concern, viaForm: false } })
+    const miss = run(hit, { type: 'headword', value: 'concern about' }, { type: 'dictResult', result: undefined })
+    expect(miss.dict).toEqual({ status: 'miss', forms: [] })
+    expect(miss.phonetic).toBe('')
+    expect(miss.meaning).toBe('')
+
+    const edited = run(hit, { type: 'meaning', value: '担忧' }, { type: 'headword', value: 'concern about' }, { type: 'dictResult', result: undefined })
+    expect(edited.meaning).toBe('担忧')
+    expect(edited.phonetic).toBe('')
+  })
   it('offers the lemma when matched via an inflection and applies it on acceptLemma', () => {
     const s1 = run(initialForm([...ALL]), { type: 'headword', value: 'concerns' }, { type: 'dictResult', result: { entry: concern, viaForm: true } })
     expect(s1.dict.lemma).toBe('concern')

@@ -99,7 +99,15 @@ export function reduceForm(s: NoteFormState, a: NoteFormAction): NoteFormState {
     case 'headword':
       return { ...s, headword: a.value, dict: { status: 'idle', forms: [] }, examples: redetect(s.examples, a.value, []) }
     case 'dictResult': {
-      if (!a.result) return { ...s, dict: { status: 'miss', forms: [] } }
+      if (!a.result) {
+        return {
+          ...s,
+          phonetic: s.touched.phonetic ? s.phonetic : '',
+          meaning: s.touched.meaning ? s.meaning : '',
+          dict: { status: 'miss', forms: [] },
+          examples: redetect(s.examples, s.headword, []),
+        }
+      }
       const { entry, viaForm } = a.result
       return {
         ...s,
