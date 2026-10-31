@@ -2,6 +2,7 @@ import { HashRouter, Outlet, Route, Routes } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
+import { NoteEditor } from '@/screens/NoteEditor'
 import { Placeholder } from '@/screens/Placeholder'
 import { SettingsStub } from '@/screens/SettingsStub'
 import { Today } from '@/screens/Today'
@@ -29,7 +30,8 @@ export function App() {
         </Route>
         <Route path="/review" element={<Placeholder title="复习" />} />
         <Route path="/inbox" element={<Placeholder title="收集箱" />} />
-        <Route path="/note/new" element={<Placeholder title="新卡片" />} />
+        <Route path="/note/new" element={<NoteEditor />} />
+        <Route path="/note/:id" element={<NoteEditor />} />
         <Route path="/spike/audio" element={<AudioSpike />} />
         <Route path="/spike/tts" element={<TtsSpike />} />
         <Route path="*" element={<Placeholder title="未找到" />} />
