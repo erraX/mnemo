@@ -6,6 +6,7 @@ import { createNote, getSettings } from '@/db/repo'
 import { backupToFile } from '@/lib/backupShare'
 import { exportBackup } from '@/lib/backup'
 import * as backup from '@/lib/backup'
+import { prefetchHeadwords } from '@/lib/prefetchAll'
 import { renderWithRouter } from '@/test/render'
 import { Settings } from './Settings'
 
@@ -16,11 +17,13 @@ afterEach(() => vi.restoreAllMocks())
 
 describe('Settings', () => {
   it('changes new-cards-per-day with the stepper, accent and autoplay', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
     renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
     fireEvent.click(await screen.findByRole('button', { name: '增加每日新卡' }))
     await waitFor(async () => expect((await getSettings(db)).newCardsPerDay).toBe(25))
     fireEvent.click(screen.getByRole('button', { name: '英音' }))
-    await waitFor(async () => expect((await getSettings(db)).accent).toBe('uk'))
+    await waitFor(() => expect(prefetchHeadwords).toHaveBeenCalledWith(['concern'], 'uk', expect.anything()))
+    expect((await getSettings(db)).accent).toBe('uk')
     fireEvent.click(screen.getByRole('switch', { name: '翻面自动朗读' }))
     await waitFor(async () => expect((await getSettings(db)).autoPlayOnReveal).toBe(false))
   })
@@ -38,7 +41,7 @@ describe('Settings', () => {
     await db.settings.update('settings', { lastBackupAt: undefined })
     share.mockRejectedValueOnce(Object.assign(new Error('cancel'), { name: 'AbortError' }))
     fireEvent.click(screen.getByRole('button', { name: /备份到文件/ }))
-    await waitFor(() => expect(share).toHaveBeenCalledTimes(2))
+    expect(await screen.findByText('已取消')).toBeTruthy()
     expect((await getSettings(db)).lastBackupAt).toBeUndefined()
   })
 
