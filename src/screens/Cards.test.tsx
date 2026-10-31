@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { db } from '@/db/db'
-import { createNote } from '@/db/repo'
+import { createNote, gradeCard, importNotes } from '@/db/repo'
+import * as bulk from '@/db/bulkNotes'
 import { renderWithRouter } from '@/test/render'
 import { Cards } from './Cards'
 
 beforeEach(async () => { await db.delete(); await db.open() })
+afterEach(() => { vi.restoreAllMocks() })
 
 describe('Cards', () => {
   it('lists notes newest first with meaning, enabled types and due summary; search filters', async () => {
@@ -28,5 +30,210 @@ describe('Cards', () => {
   it('shows an empty state', async () => {
     renderWithRouter(<Cards />, { route: '/cards', path: '/cards' })
     expect(await screen.findByText('还没有记录')).toBeTruthy()
+  })
+})
+
+const input = {
+  headword: 'concern', meaning: '担忧', examples: [{ text: 'I have concerns.', blanks: [{ start: 7, end: 15 }] }],
+  tags: [], enabledTypes: ['zh2en', 'cloze', 'en2zh'] as ('zh2en' | 'cloze' | 'en2zh')[],
+}
+
+async function openBatch() {
+  renderWithRouter(<Cards />, { route: '/cards', path: '/cards' })
+  await screen.findAllByRole('link', { name: /concern/ })
+  fireEvent.click(screen.getByRole('button', { name: '批量管理' }))
+}
+
+function selectAll() {
+  fireEvent.click(screen.getByRole('button', { name: /全选搜索结果/ }))
+}
+
+function previewClozeRemoval() {
+  fireEvent.click(screen.getByRole('button', { name: '编辑卡片类型' }))
+  fireEvent.change(screen.getByRole('combobox', { name: '例句挖空操作' }), { target: { value: 'disable' } })
+  fireEvent.click(screen.getByRole('button', { name: '预览卡型修改' }))
+}
+
+describe('Cards bulk management', () => {
+  it('selects individual words, previews deletion without writes, cancels, and clears selection on exit', async () => {
+    await createNote(db, input)
+    await createNote(db, { ...input, headword: 'other' })
+    await openBatch()
+    expect(screen.queryByRole('link', { name: /concern/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('checkbox', { name: '选择 concern' }))
+    expect(screen.getByText('已选 1 个单词')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
+    const preview = await screen.findByRole('region', { name: '批量操作预览' })
+    expect(within(preview).getByText('涉及 1 个单词')).toBeInTheDocument()
+    expect(within(preview).getByText('删除 3 张卡 · 0 条复习记录')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '取消操作' }))
+    expect(await db.notes.count()).toBe(2)
+    expect(await db.cards.count()).toBe(6)
+    expect(screen.queryByRole('region', { name: '批量操作预览' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '退出批量管理' }))
+    expect(screen.getAllByRole('link')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: '批量管理' }))
+    expect(screen.getByText('已选 0 个单词')).toBeInTheDocument()
+  })
+
+  it('defaults to keeping all types, then removes cloze only after confirmation and preserves other progress', async () => {
+    const note = await createNote(db, input)
+    const cards = await db.cards.toArray()
+    await gradeCard(db, cards.find((card) => card.type === 'zh2en')!.id, 3)
+    const kept = (await db.cards.toArray()).filter((card) => card.type !== 'cloze')
+    await openBatch()
+    selectAll()
+    fireEvent.click(screen.getByRole('button', { name: '编辑卡片类型' }))
+    expect(screen.getAllByRole('combobox').every((select) => (select as HTMLSelectElement).value === 'keep')).toBe(true)
+    expect(screen.getByRole('button', { name: '预览卡型修改' })).toBeDisabled()
+    fireEvent.change(screen.getByRole('combobox', { name: '例句挖空操作' }), { target: { value: 'disable' } })
+    fireEvent.click(screen.getByRole('button', { name: '预览卡型修改' }))
+    await screen.findByRole('region', { name: '批量操作预览' })
+    expect(await db.cards.count()).toBe(3)
+    fireEvent.click(screen.getByRole('button', { name: '确认修改卡片类型' }))
+    expect(await screen.findByText(/已处理 1 个单词：新增 0 张卡，删除 1 张卡/)).toBeInTheDocument()
+    expect(await db.cards.toArray()).toEqual(kept)
+    expect((await db.notes.get(note.id))?.enabledTypes).toEqual(['zh2en', 'en2zh'])
+    expect(screen.getByText('已选 0 个单词')).toBeInTheDocument()
+  })
+
+  it('clears selection immediately on search changes, disables selection during debounce and selects only matching words', async () => {
+    await createNote(db, input)
+    await createNote(db, { ...input, headword: 'other', meaning: '别的', examples: [] })
+    await openBatch()
+    selectAll()
+    expect(screen.getByText('已选 2 个单词')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('搜索'), { target: { value: 'concern' } })
+    expect(screen.getByText('已选 0 个单词')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /全选搜索结果/ })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '删除单词' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1))
+    selectAll()
+    expect(screen.getByText('已选 1 个单词')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '清除选择' }))
+    expect(screen.getByText('已选 0 个单词')).toBeInTheDocument()
+  })
+
+  it('selects the entire library from a filtered list and supports clearing it for reimport', async () => {
+    await createNote(db, input)
+    await createNote(db, { ...input, headword: 'other', meaning: '别的', examples: [] })
+    await openBatch()
+    fireEvent.change(screen.getByLabelText('搜索'), { target: { value: 'concern' } })
+    await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1))
+    fireEvent.click(screen.getByRole('button', { name: '选择整个词库' }))
+    await screen.findByText('已选 2 个单词')
+    await waitFor(() => expect(screen.getByRole('button', { name: '删除单词' })).toBeEnabled())
+    expect(screen.getByLabelText('搜索')).toHaveValue('')
+    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
+    fireEvent.click(await screen.findByRole('button', { name: '确认删除 2 个单词' }))
+    await screen.findByText('已删除 2 个单词、5 张卡、0 条复习记录')
+    expect(await db.notes.count()).toBe(0)
+    expect(await db.cards.count()).toBe(0)
+    await importNotes(db, [input])
+    expect(await db.notes.count()).toBe(1)
+  })
+
+  it('selects all matching results beyond the 300 displayed rows and deletes them without touching nonmatches', async () => {
+    await importNotes(db, Array.from({ length: 305 }, (_, i) => ({ ...input, headword: `concern-${i}` })))
+    const other = await createNote(db, { ...input, headword: 'other', meaning: '别的', examples: [] })
+    await openBatch()
+    fireEvent.change(screen.getByLabelText('搜索'), { target: { value: 'concern-' } })
+    await screen.findByText('匹配 305 个单词 · 已展示 300 个')
+    expect(screen.getAllByRole('checkbox')).toHaveLength(300)
+    selectAll()
+    expect(screen.getByText('已选 305 个单词')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '显示更多（还有 5 个）' }))
+    expect(screen.getAllByRole('checkbox')).toHaveLength(305)
+    expect(screen.getAllByRole('checkbox').every((box) => (box as HTMLInputElement).checked)).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
+    const confirm = await screen.findByRole('button', { name: '确认删除 305 个单词' })
+    await waitFor(() => expect(confirm).toBeEnabled())
+    fireEvent.click(confirm)
+    await screen.findByText('已删除 305 个单词、915 张卡、0 条复习记录', {}, { timeout: 5000 })
+    expect(await db.notes.toArray()).toEqual([other])
+  })
+
+  it('invalidates previews when either the selection or the type changes', async () => {
+    await createNote(db, input)
+    await createNote(db, { ...input, headword: 'other' })
+    await openBatch()
+    selectAll()
+    previewClozeRemoval()
+    await screen.findByRole('region', { name: '批量操作预览' })
+    fireEvent.change(screen.getByRole('combobox', { name: '英 → 中操作' }), { target: { value: 'disable' } })
+    expect(screen.queryByRole('region', { name: '批量操作预览' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '预览卡型修改' }))
+    await screen.findByRole('region', { name: '批量操作预览' })
+    fireEvent.click(screen.getByRole('checkbox', { name: '选择 other' }))
+    expect(screen.queryByRole('region', { name: '批量操作预览' })).not.toBeInTheDocument()
+    expect(screen.getByText('已选 1 个单词')).toBeInTheDocument()
+    expect(await db.cards.count()).toBe(6)
+  })
+
+  it('enables missing types and reports skipped cards whose cloze prerequisites are missing', async () => {
+    await createNote(db, { ...input, enabledTypes: ['en2zh'] })
+    await createNote(db, { ...input, headword: 'other', examples: [], enabledTypes: ['en2zh'] })
+    await openBatch()
+    selectAll()
+    fireEvent.click(screen.getByRole('button', { name: '编辑卡片类型' }))
+    fireEvent.change(screen.getByRole('combobox', { name: '例句挖空操作' }), { target: { value: 'enable' } })
+    fireEvent.click(screen.getByRole('button', { name: '预览卡型修改' }))
+    const preview = await screen.findByRole('region', { name: '批量操作预览' })
+    expect(within(preview).getByText('新增 1 张卡')).toBeInTheDocument()
+    expect(within(preview).getByText(/1 张卡因缺少例句挖空等必要内容/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '确认修改卡片类型' }))
+    await screen.findByText(/已处理 2 个单词：新增 1 张卡，删除 0 张卡、0 条复习记录；跳过 1 张/)
+    expect(await db.cards.count()).toBe(3)
+  })
+
+  it('reports a failure with no writes, discards the preview and lets the user retry', async () => {
+    await createNote(db, input)
+    await openBatch()
+    selectAll()
+    previewClozeRemoval()
+    await screen.findByRole('region', { name: '批量操作预览' })
+    vi.spyOn(bulk, 'applyBulkNotes').mockRejectedValueOnce(new Error('disk full'))
+    fireEvent.click(screen.getByRole('button', { name: '确认修改卡片类型' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('disk full')
+    expect(await db.cards.count()).toBe(3)
+    expect(screen.queryByRole('region', { name: '批量操作预览' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '预览卡型修改' }))
+    fireEvent.click(await screen.findByRole('button', { name: '确认修改卡片类型' }))
+    await screen.findByText(/已处理 1 个单词：新增 0 张卡，删除 1 张卡/)
+    expect(await db.cards.count()).toBe(2)
+  })
+
+  it('blocks duplicate submissions and selection/search while execution is pending', async () => {
+    await createNote(db, input)
+    await openBatch()
+    selectAll()
+    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
+    const confirm = await screen.findByRole('button', { name: '确认删除 1 个单词' })
+    const original = bulk.applyBulkNotes
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const apply = vi.spyOn(bulk, 'applyBulkNotes').mockImplementationOnce(async (...args) => { await gate; return original(...args) })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+    expect(apply).toHaveBeenCalledTimes(1)
+    expect(confirm).toBeDisabled()
+    expect(screen.getByLabelText('搜索')).toBeDisabled()
+    expect(screen.getByRole('button', { name: '退出批量管理' })).toBeDisabled()
+    expect(screen.getByRole('checkbox')).toBeDisabled()
+    await act(async () => { release() })
+    await screen.findByText('已删除 1 个单词、3 张卡、0 条复习记录')
+  })
+
+  it('requires another preview if the selected data changed after confirmation was prepared', async () => {
+    const note = await createNote(db, input)
+    await openBatch()
+    selectAll()
+    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
+    const confirm = await screen.findByRole('button', { name: '确认删除 1 个单词' })
+    await act(async () => { await db.notes.update(note.id, { meaning: '改过' }) })
+    fireEvent.click(confirm)
+    expect(await screen.findByRole('alert')).toHaveTextContent('所选数据已变化，请重新预览后确认')
+    expect(await db.notes.count()).toBe(1)
+    expect(screen.queryByRole('region', { name: '批量操作预览' })).not.toBeInTheDocument()
   })
 })
