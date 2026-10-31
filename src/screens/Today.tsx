@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { db } from '@/db/db'
 import { getSettings, getTodayCounts } from '@/db/repo'
 import { OriginBanner } from '@/components/OriginBanner'
+import { useVisibilityTick } from '@/app/useVisibilityTick'
 import type { DictLoadState } from '@/app/useDictLoader'
 import type { Settings } from '@/domain/types'
 
@@ -22,7 +23,8 @@ export function backupNudgeText(settings: Settings | undefined, noteCount: numbe
 
 export function Today({ dict }: { dict: DictLoadState }) {
   const navigate = useNavigate()
-  const counts = useLiveQuery(() => getTodayCounts(db), [], { due: 0, fresh: 0 })
+  const tick = useVisibilityTick()
+  const counts = useLiveQuery(() => getTodayCounts(db), [tick], { due: 0, fresh: 0 })
   const settings = useLiveQuery(() => getSettings(db), [])
   const drafts = useLiveQuery(() => db.drafts.count(), [], 0)
   const noteCount = useLiveQuery(() => db.notes.count(), [], 0)

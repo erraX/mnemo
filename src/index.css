@@ -43,6 +43,7 @@
     --color-notice-fg: #ffd60a;
     --color-notice-bg: color-mix(in srgb, #ffd60a 15%, transparent);
     --color-notice-line: color-mix(in srgb, #ffd60a 35%, transparent);
+    --color-cloze: color-mix(in srgb, #ffd60a 28%, transparent);
   }
 }
 
