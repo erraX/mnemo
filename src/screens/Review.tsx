@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router'
 import { db } from '@/db/db'
@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS, type Rating } from '@/domain/types'
 import { scheduler } from '@/lib/scheduler'
 import { afterGrade, afterUndo, continueAfterBreather, elapsedMinutes, initialSession, reveal, withQueue } from '@/lib/session'
 import { useAudio } from '@/app/useAudio'
+import { useVisibilityTick } from '@/app/useVisibilityTick'
 import { Button } from '@/components/ui/Button'
 import { BreatherPage } from '@/components/review/BreatherPage'
 import { CardBack } from '@/components/review/CardBack'
@@ -21,6 +22,9 @@ export function Review() {
   const [session, setSession] = useState(() => initialSession(Date.now()))
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState<string | undefined>(undefined)
+  const [loadError, setLoadError] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const tick = useVisibilityTick()
 
   const current = session.queue[0]
   // useLiveQuery 在 deps 变化后仍返回上一张的结果，直到新查询完成；按 noteId 配对，避免把上一张的记录当成当前卡
@@ -39,9 +43,26 @@ export function Review() {
 
   useEffect(() => {
     let cancelled = false
-    void requery().then((q) => { if (!cancelled) setSession((s) => withQueue(s, q)) })
+    setLoadError(false)
+    requery()
+      .then((q) => { if (!cancelled) setSession((s) => withQueue(s, q)) })
+      .catch(() => { if (!cancelled) setLoadError(true) })
     return () => { cancelled = true }
-  }, [requery])
+  }, [requery, loadAttempt])
+
+  // 回到前台时到期集可能已变（跨天 / 在其他标签页改过）；正在答题（已翻面）时不打断
+  const sessionRef = useRef(session)
+  sessionRef.current = session
+  useEffect(() => {
+    if (tick === 0) return
+    const s = sessionRef.current
+    if (s.phase === 'loading' || s.revealed) return
+    let cancelled = false
+    requery()
+      .then((q) => { if (!cancelled) setSession((cur) => (cur.revealed ? cur : withQueue(cur, q))) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [tick, requery])
 
   useEffect(() => {
     if (!toast) return
@@ -74,6 +95,8 @@ export function Review() {
       const { log } = await gradeCard(db, current.id, rating)
       const queue = await requery()
       setSession((s) => afterGrade(s, { wasNew: log.state === 0, queue }))
+    } catch {
+      setToast('操作失败，请重试')
     } finally {
       setBusy(false)
     }
@@ -85,8 +108,10 @@ export function Review() {
     try {
       const restored = await undoLastReview(db)
       const queue = await requery()
-      setSession((s) => afterUndo(s, { wasNew: restored?.state === 0, queue }))
+      setSession((s) => afterUndo(s, { wasNew: restored?.state === 0, queue, restoredId: restored?.id }))
       setToast('已撤销')
+    } catch {
+      setToast('操作失败，请重试')
     } finally {
       setBusy(false)
     }
@@ -107,7 +132,16 @@ export function Review() {
 
   let body: ReactNode
   if (session.phase === 'loading') {
-    body = <div className="grid min-h-dvh place-items-center text-muted">加载中…</div>
+    body = loadError ? (
+      <div className="grid min-h-dvh place-items-center p-6 text-center">
+        <div>
+          <div className="text-xl font-semibold">加载失败</div>
+          <Button variant="secondary" className="mt-4" onClick={() => setLoadAttempt((n) => n + 1)}>重试</Button>
+        </div>
+      </div>
+    ) : (
+      <div className="grid min-h-dvh place-items-center text-muted">加载中…</div>
+    )
   } else if (session.phase === 'breather') {
     body = <BreatherPage reviewed={session.stats.reviewed} remaining={session.queue.length} onContinue={() => setSession(continueAfterBreather)} onStop={() => navigate('/')} />
   } else if (session.phase === 'done' || !current) {

@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { db } from '@/db/db'
-import { createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, updateNote } from '@/db/repo'
+import { allTags, createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, updateNote } from '@/db/repo'
 import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type Note } from '@/domain/types'
 import { tokenize } from '@/lib/cloze'
 import { lookupWord } from '@/lib/dict'
@@ -34,13 +34,17 @@ export function NoteEditor() {
   const mode: 'new' | 'edit' = id ? 'edit' : 'new'
 
   const settings = useLiveQuery(() => getSettings(db), [])
-  const note = useLiveQuery(() => (id ? db.notes.get(id) : undefined), [id])
+  // 包一层对象以区分“还在查”（undefined）和“查了但不存在”（{ note: undefined }）
+  const noteState = useLiveQuery(async () => ({ note: id ? await db.notes.get(id) : undefined }), [id])
+  const note = noteState?.note
   const draft = useLiveQuery(() => (draftId ? db.drafts.get(draftId) : undefined), [draftId])
+  const tags = useLiveQuery(() => allTags(db), [], [])
   const [form, dispatch] = useReducer(reduceForm, undefined, () => initialForm(DEFAULT_SETTINGS.lastEnabledTypes))
   const [loadedFor, setLoadedFor] = useState<string | undefined>(undefined)
   const [prefilledFor, setPrefilledFor] = useState<string | undefined>(undefined)
   const [duplicate, setDuplicate] = useState<Note | undefined>(undefined)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | undefined>(undefined)
   // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
   const [headwordDirty, setHeadwordDirty] = useState(false)
   const lookupEnabled = mode === 'new' || headwordDirty
@@ -83,10 +87,12 @@ export function NoteEditor() {
   const availability = formAvailability(form)
   // 有来路就回上一屏（复习 / 卡片列表）；直接打开的页面 location.key 是 'default'，回首页
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/', { replace: true }))
+  const failureMessage = (e: unknown) => `操作失败：${e instanceof Error ? e.message : String(e)}`
 
   async function save() {
     if (!canSave(form) || saving) return
     setSaving(true)
+    setError(undefined)
     try {
       const input = toNoteInput(form)
       if (mode === 'new') {
@@ -101,6 +107,8 @@ export function NoteEditor() {
       }
       void audio.prefetch(input.headword)
       goBack()
+    } catch (e) {
+      setError(failureMessage(e))
     } finally {
       setSaving(false)
     }
@@ -109,14 +117,36 @@ export function NoteEditor() {
   async function remove() {
     if (!id) return
     if (!window.confirm('删除这条记录和它的全部卡片、复习记录？')) return
-    await deleteNote(db, id)
-    goBack()
+    setError(undefined)
+    try {
+      await deleteNote(db, id)
+      goBack()
+    } catch (e) {
+      setError(failureMessage(e))
+    }
   }
+
+  const tagList = form.tags.split(/[,，\s]+/).filter(Boolean)
+  const tagSuggestions = tags.filter((t) => !tagList.includes(t.tag)).slice(0, 8)
+  const appendTag = (tag: string) =>
+    dispatch({ type: 'tags', value: form.tags.trim() ? `${form.tags.replace(/[,，\s]+$/, '')}, ${tag}` : tag })
 
   const dictHint =
     form.dict.status === 'hit' ? <span className="text-good-fg"><span aria-hidden="true">✓ </span>已从词典补全</span>
     : form.dict.status === 'miss' ? <span className="text-accent">词典没有，手动填写</span>
     : null
+
+  // 必须在所有 hook 之后早返回
+  if (mode === 'edit' && noteState && !noteState.note) {
+    return (
+      <div className="grid min-h-dvh place-items-center p-6 text-center">
+        <div>
+          <div className="text-xl font-semibold">记录不存在</div>
+          <Button variant="secondary" className="mt-4" onClick={goBack}>返回</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-dvh bg-bg pb-10">
@@ -174,7 +204,7 @@ export function NoteEditor() {
         </Field>
 
         {form.examples.map((ex, i) => (
-          <Field key={ex.id} label={`例句 ${i + 1}`} hint={<button type="button" className="text-accent" onClick={() => dispatch({ type: 'removeExample', id: ex.id })}>删除</button>}>
+          <Field key={ex.id} label={`例句 ${i + 1}`} hint={<button type="button" aria-label={`删除例句 ${i + 1}`} className="text-accent" onClick={() => dispatch({ type: 'removeExample', id: ex.id })}>删除</button>}>
             <textarea
               aria-label={`例句 ${i + 1}`}
               rows={2}
@@ -196,6 +226,15 @@ export function NoteEditor() {
 
         <Field label="标签">
           <input aria-label="标签" className={inputCls} placeholder="逗号分隔，可空" value={form.tags} onChange={(e) => dispatch({ type: 'tags', value: e.target.value })} />
+          {tagSuggestions.length > 0 && (
+            <div className="mt-1">
+              {tagSuggestions.map((t) => (
+                <button key={t.tag} type="button" aria-label={`添加标签 ${t.tag}`} className="mr-1 mt-1 rounded-full border border-line px-2 py-0.5 text-xs text-muted" onClick={() => appendTag(t.tag)}>
+                  {t.tag}
+                </button>
+              ))}
+            </div>
+          )}
         </Field>
 
         <Field label="卡片类型（多选）">
@@ -206,7 +245,7 @@ export function NoteEditor() {
               </Chip>
             ))}
           </div>
-          {CARD_TYPES.filter((t) => form.types.includes(t) && !availability[t].ok).map((t) => (
+          {CARD_TYPES.filter((t) => !availability[t].ok).map((t) => (
             <p key={t} className="mt-1 text-xs text-muted">{CARD_TYPE_LABEL[t]}：{availability[t].reason}</p>
           ))}
         </Field>
@@ -214,6 +253,7 @@ export function NoteEditor() {
         <Button size="lg" className="mt-2" disabled={!canSave(form) || saving} onClick={() => void save()}>
           {saveLabel(form, mode)}
         </Button>
+        {error && <p role="alert" className="text-xs text-again-fg">{error}</p>}
 
         {mode === 'edit' && (
           <Button variant="ghost" className="mt-4 text-again-fg" onClick={() => void remove()}>删除这条记录</Button>

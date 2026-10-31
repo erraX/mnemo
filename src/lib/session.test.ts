@@ -54,6 +54,13 @@ describe('session', () => {
     expect(s1.phase).toBe('card')
     expect(afterUndo(s1, { wasNew: false, queue: many(2) }).stats.reviewed).toBe(0)
   })
+  it('afterUndo moves the restored card to the front when present', () => {
+    const [a, b, c] = many(3) as [Card, Card, Card]
+    const s0 = afterGrade(withQueue(initialSession(NOW), [a, b, c]), { wasNew: false, queue: [b, c] })
+    const s1 = afterUndo(s0, { wasNew: false, queue: [b, c, a], restoredId: a.id })
+    expect(s1.queue.map((x) => x.id)).toEqual([a.id, b.id, c.id])
+    expect(afterUndo(s0, { wasNew: false, queue: [b, c], restoredId: 'missing' }).queue.map((x) => x.id)).toEqual([b.id, c.id])
+  })
   it('elapsedMinutes rounds up to at least 1', () => {
     expect(elapsedMinutes(initialSession(NOW), NOW + 20_000)).toBe(1)
     expect(elapsedMinutes(initialSession(NOW), NOW + 9.6 * 60_000)).toBe(10)

@@ -38,9 +38,8 @@ export function createPlayer(deps: PlayerDeps) {
   const setT = deps.setTimeout ?? setTimeout
   const clearT = deps.clearTimeout ?? clearTimeout
   let el: AudioElementLike | undefined
-  // cleanup / abortCurrent track the in-flight play so finish() and stop() can
+  // abortCurrent tracks the in-flight play so finish() and stop() can
   // guard by reference-equality and avoid touching a newer play's state.
-  let cleanup: (() => void) | undefined
   let abortCurrent: (() => void) | undefined
 
   function stop() {
@@ -61,7 +60,6 @@ export function createPlayer(deps: PlayerDeps) {
       const finish = (o: PlayOutcome) => {
         if (settled) return
         localCleanup()
-        if (cleanup === localCleanup) cleanup = undefined
         if (abortCurrent === localAbort) abortCurrent = undefined
         resolve(o)
       }
@@ -85,11 +83,9 @@ export function createPlayer(deps: PlayerDeps) {
       const localAbort = () => {
         if (settled) return
         localCleanup()
-        if (cleanup === localCleanup) cleanup = undefined
         if (abortCurrent === localAbort) abortCurrent = undefined
         resolve('none')
       }
-      cleanup = localCleanup
       abortCurrent = localAbort
       audio.addEventListener('playing', onPlaying)
       audio.addEventListener('error', onError)

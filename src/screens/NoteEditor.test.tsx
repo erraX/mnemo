@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { db } from '@/db/db'
-import { createNote } from '@/db/repo'
+import { createNote, updateSettings } from '@/db/repo'
+import * as repo from '@/db/repo'
 import * as dictModule from '@/lib/dict'
 import { renderWithRouter } from '@/test/render'
 import { NoteEditor, NoteEditorRoute, LOOKUP_DEBOUNCE_MS } from './NoteEditor'
@@ -179,5 +180,39 @@ describe('NoteEditor (draft prefill)', () => {
     expect(screen.queryByText('点一个词作为要记的词')).toBeNull()
     await waitFor(() => expect(screen.getByRole('button', { name: '改为原形 concern' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'concerns' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+describe('NoteEditor (polish)', () => {
+  it('shows a not-found state for an unknown id', async () => {
+    renderWithRouter(<NoteEditor />, { route: '/note/nope', path: '/note/:id' })
+    expect(await screen.findByText('记录不存在')).toBeTruthy()
+    expect(screen.queryByLabelText('单词 / 短语')).toBeNull()
+  })
+  it('suggests existing tags and appends on tap', async () => {
+    await createNote(db, { headword: 'leverage', meaning: 'x', examples: [], tags: ['biz', 'cet4'], enabledTypes: ['en2zh'] })
+    renderWithRouter(<NoteEditor />, { route: '/note/new', path: '/note/new' })
+    fireEvent.click(await screen.findByRole('button', { name: '添加标签 biz' }))
+    expect((screen.getByLabelText('标签') as HTMLInputElement).value).toBe('biz')
+    fireEvent.click(screen.getByRole('button', { name: '添加标签 cet4' }))
+    expect((screen.getByLabelText('标签') as HTMLInputElement).value).toBe('biz, cet4')
+    expect(screen.queryByRole('button', { name: '添加标签 biz' })).toBeNull()
+  })
+  it('explains every unavailable card type, selected or not', async () => {
+    // 默认勾选全部三种卡型会让旧过滤条件（仅已选中）也通过；只勾选 zh2en 才能覆盖“未选中也显示原因”
+    await updateSettings(db, { lastEnabledTypes: ['zh2en'] })
+    renderWithRouter(<NoteEditor />, { route: '/note/new', path: '/note/new' })
+    await screen.findByLabelText('单词 / 短语')
+    await waitFor(() => expect(screen.getByRole('button', { name: /英 → 中/ }).getAttribute('aria-pressed')).toBe('false'))
+    expect(screen.getByRole('button', { name: /例句挖空/ }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByText(/例句挖空：先给一条例句并挖一个空/)).toBeTruthy()
+    expect(screen.getByText(/英 → 中：先填写单词或短语/)).toBeTruthy()
+  })
+  it('shows an inline error when saving fails', async () => {
+    vi.spyOn(repo, 'createNote').mockRejectedValueOnce(new Error('disk full'))
+    renderWithRouter(<NoteEditor />, { route: '/note/new', path: '/note/new' })
+    fireEvent.change(await screen.findByLabelText('单词 / 短语'), { target: { value: 'x' } })
+    fireEvent.click(screen.getByRole('button', { name: /保存 · 生成/ }))
+    expect(await screen.findByText('操作失败：disk full')).toBeTruthy()
   })
 })

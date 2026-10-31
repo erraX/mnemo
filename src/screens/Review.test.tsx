@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { db } from '@/db/db'
 import { createNote, gradeCard } from '@/db/repo'
+import * as repo from '@/db/repo'
 import { renderWithRouter } from '@/test/render'
 import { Review } from './Review'
 
@@ -105,5 +106,18 @@ describe('Review', () => {
     fireEvent.click(screen.getByRole('button', { name: '再学 10 张新卡' }))
     await screen.findByRole('button', { name: '看答案' })
     expect(screen.getByText('剩余 1')).toBeTruthy()
+  })
+})
+
+describe('Review errors', () => {
+  it('shows a toast when grading fails and keeps the card', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    vi.spyOn(repo, 'gradeCard').mockRejectedValueOnce(new Error('boom'))
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    expect(await screen.findByText('操作失败，请重试')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /简单/ })).toBeTruthy()
+    expect(await db.reviewLogs.count()).toBe(0)
   })
 })

@@ -41,13 +41,16 @@ export function continueAfterBreather(s: SessionState): SessionState {
   return { ...s, phase: s.queue.length === 0 ? 'done' : 'card', revealed: false }
 }
 
-export function afterUndo(s: SessionState, { wasNew, queue }: { wasNew: boolean; queue: Card[] }): SessionState {
+/** 撤销后把被恢复的卡放回队首（若仍在队列中），用户看到的是刚才那张而不是重排后的别张 */
+export function afterUndo(s: SessionState, { wasNew, queue, restoredId }: { wasNew: boolean; queue: Card[]; restoredId?: string }): SessionState {
   const stats = {
     ...s.stats,
     reviewed: Math.max(0, s.stats.reviewed - 1),
     learned: Math.max(0, s.stats.learned - (wasNew ? 1 : 0)),
   }
-  return withQueue({ ...s, stats, sinceBreather: Math.max(0, s.sinceBreather - 1), canUndo: false }, queue)
+  const restored = restoredId ? queue.find((c) => c.id === restoredId) : undefined
+  const ordered = restored ? [restored, ...queue.filter((c) => c.id !== restoredId)] : queue
+  return withQueue({ ...s, stats, sinceBreather: Math.max(0, s.sinceBreather - 1), canUndo: false }, ordered)
 }
 
 export function elapsedMinutes(s: SessionState, now: number): number {
