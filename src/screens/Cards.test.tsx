@@ -145,14 +145,25 @@ describe('Cards bulk management', () => {
     fireEvent.click(screen.getByRole('button', { name: '显示更多（还有 5 个）' }))
     expect(screen.getAllByRole('checkbox')).toHaveLength(305)
     expect(screen.getAllByRole('checkbox').every((box) => (box as HTMLInputElement).checked)).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
-    // 大批量 IndexedDB 预览也需要等待，不能沿用 findBy 默认的 1 秒上限。
-    const confirm = await screen.findByRole('button', { name: '确认删除 305 个单词' }, { timeout: 10_000 })
-    await waitFor(() => expect(confirm).toBeEnabled(), { timeout: 5000 })
-    fireEvent.click(confirm)
-    await screen.findByText('已删除 305 个单词、915 张卡、0 条复习记录', {}, { timeout: 10_000 })
+    const actions = within(screen.getByRole('region', { name: '批量操作' }))
+    // 等待真实数据库操作，避免在 300+ 行上反复做昂贵的角色查询，饿死 fake-indexeddb 的异步任务。
+    const preview = vi.spyOn(bulk, 'planBulkNotes')
+    await act(async () => {
+      fireEvent.click(actions.getByRole('button', { name: '删除单词' }))
+      expect(preview).toHaveBeenCalledTimes(1)
+      await preview.mock.results[0]!.value
+    })
+    const confirm = actions.getByRole('button', { name: '确认删除 305 个单词' })
+    expect(confirm).toBeEnabled()
+    const apply = vi.spyOn(bulk, 'applyBulkNotes')
+    await act(async () => {
+      fireEvent.click(confirm)
+      expect(apply).toHaveBeenCalledTimes(1)
+      await apply.mock.results[0]!.value
+    })
+    expect(screen.getByText('已删除 305 个单词、915 张卡、0 条复习记录')).toBeInTheDocument()
     expect(await db.notes.toArray()).toEqual([other])
-  }, 30_000) // 仅放宽大词库场景，不降低任何断言或放宽其他测试。
+  }, 15_000) // CI 上给完整大词库场景留余量；不替换数据库操作或降低断言。
 
   it('invalidates previews when either the selection or the type changes', async () => {
     await createNote(db, input)
