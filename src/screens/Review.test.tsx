@@ -55,6 +55,17 @@ describe('Review', () => {
     await screen.findByRole('button', { name: '看答案' })
   })
 
+  it('shows "没有更多新卡了" toast and records extraNew=10 when no new cards remain', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    await screen.findByText('今天的复习完成了')
+    fireEvent.click(screen.getByRole('button', { name: '再学 10 张新卡' }))
+    await screen.findByText('没有更多新卡了')
+    expect((await db.settings.get('settings'))?.extraNew?.count).toBe(10)
+  })
+
   it('"再学 10 张新卡" pulls cards beyond the daily limit', async () => {
     await db.settings.put({ id: 'settings', newCardsPerDay: 1, accent: 'us', autoPlayOnReveal: false, lastEnabledTypes: ['en2zh'] })
     await createNote(db, { headword: 'a', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)

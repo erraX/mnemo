@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router'
 import { db } from '@/db/db'
@@ -84,60 +84,73 @@ export function Review() {
   }
 
   async function onMore() {
-    await addExtraNewToday(db, 10)
-    const queue = await requery()
-    setSession((s) => ({ ...withQueue(s, queue), sinceBreather: 0 }))
-    if (queue.length === 0) setToast('没有更多新卡了')
+    if (busy) return
+    setBusy(true)
+    try {
+      await addExtraNewToday(db, 10)
+      const queue = await requery()
+      setSession((s) => ({ ...withQueue(s, queue), sinceBreather: 0 }))
+      if (queue.length === 0) setToast('没有更多新卡了')
+    } finally {
+      setBusy(false)
+    }
   }
 
-  if (session.phase === 'loading') return <div className="grid min-h-dvh place-items-center text-muted">加载中…</div>
-  if (session.phase === 'breather') {
-    return <BreatherPage reviewed={session.stats.reviewed} remaining={session.queue.length} onContinue={() => setSession(continueAfterBreather)} onStop={() => navigate('/')} />
-  }
-  if (session.phase === 'done' || !current) {
-    return (
+  let body: ReactNode
+  if (session.phase === 'loading') {
+    body = <div className="grid min-h-dvh place-items-center text-muted">加载中…</div>
+  } else if (session.phase === 'breather') {
+    body = <BreatherPage reviewed={session.stats.reviewed} remaining={session.queue.length} onContinue={() => setSession(continueAfterBreather)} onStop={() => navigate('/')} />
+  } else if (session.phase === 'done' || !current) {
+    body = (
       <DonePage
         reviewed={session.stats.reviewed}
         learned={session.stats.learned}
         minutes={elapsedMinutes(session, Date.now())}
         onMore={() => void onMore()}
         onHome={() => navigate('/')}
+        moreDisabled={busy}
         extra={session.canUndo ? <Button variant="ghost" className="mt-2" onClick={() => void onUndo()}>撤销上一步</Button> : undefined}
       />
+    )
+  } else {
+    body = (
+      <div className="flex min-h-dvh flex-col bg-panel" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="flex items-center justify-between px-4 py-3 text-sm">
+          <button type="button" aria-label="关闭" className="text-muted" onClick={() => navigate('/')}>✕</button>
+          <span className="font-semibold">剩余 {session.queue.length}</span>
+          <div className="flex gap-4">
+            <button type="button" className="text-accent disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
+            <button type="button" className="text-accent" onClick={() => navigate(`/note/${current.noteId}?from=review`)}>编辑</button>
+          </div>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-4">
+          {!noteLoaded ? null : note ? (
+            session.revealed ? <CardBack note={note} onPlay={playHeadword} /> : <CardFront card={current} note={note} onPlay={playHeadword} />
+          ) : (
+            <p className="text-sm text-muted">记录不存在</p>
+          )}
+        </div>
+
+        <div className="mx-auto w-full max-w-md px-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
+          {!noteLoaded ? null : session.revealed && labels ? (
+            <GradeBar labels={labels} onGrade={(r) => void onGrade(r)} disabled={busy} />
+          ) : (
+            <>
+              <p className="mb-2 text-center text-xs text-muted">想好了再翻</p>
+              <Button size="lg" className="w-full" onClick={onReveal} disabled={!note}>看答案</Button>
+            </>
+          )}
+        </div>
+      </div>
     )
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-panel" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="flex items-center justify-between px-4 py-3 text-sm">
-        <button type="button" aria-label="关闭" className="text-muted" onClick={() => navigate('/')}>✕</button>
-        <span className="font-semibold">剩余 {session.queue.length}</span>
-        <div className="flex gap-4">
-          <button type="button" className="text-accent disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
-          <button type="button" className="text-accent" onClick={() => navigate(`/note/${current.noteId}?from=review`)}>编辑</button>
-        </div>
-      </div>
-
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-4">
-        {!noteLoaded ? null : note ? (
-          session.revealed ? <CardBack note={note} onPlay={playHeadword} /> : <CardFront card={current} note={note} onPlay={playHeadword} />
-        ) : (
-          <p className="text-sm text-muted">记录不存在</p>
-        )}
-      </div>
-
-      <div className="mx-auto w-full max-w-md px-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
-        {!noteLoaded ? null : session.revealed && labels ? (
-          <GradeBar labels={labels} onGrade={(r) => void onGrade(r)} disabled={busy} />
-        ) : (
-          <>
-            <p className="mb-2 text-center text-xs text-muted">想好了再翻</p>
-            <Button size="lg" className="w-full" onClick={onReveal} disabled={!note}>看答案</Button>
-          </>
-        )}
-      </div>
-
+    <>
+      {body}
       {toast && <div className="pointer-events-none fixed inset-x-0 bottom-28 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
-    </div>
+    </>
   )
 }
