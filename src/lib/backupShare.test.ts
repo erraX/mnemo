@@ -35,10 +35,17 @@ describe('deliverBackup', () => {
     expect(await deliverBackup(file, { canShareFiles: () => true, share: async () => { throw err }, download })).toBe('cancelled')
     expect(download).not.toHaveBeenCalled()
   })
-  it('falls back to download on other share errors or when sharing is unsupported', async () => {
+  it('reports failed on other share errors without falling back to download', async () => {
     const download = vi.fn()
-    expect(await deliverBackup(file, { canShareFiles: () => true, share: async () => { throw new Error('boom') }, download })).toBe('downloaded')
-    expect(await deliverBackup(file, { canShareFiles: () => false, share: async () => undefined, download })).toBe('downloaded')
-    expect(download).toHaveBeenCalledTimes(2)
+    const err = Object.assign(new Error('denied'), { name: 'NotAllowedError' })
+    expect(await deliverBackup(file, { canShareFiles: () => true, share: async () => { throw err }, download })).toBe('failed')
+    expect(download).not.toHaveBeenCalled()
+  })
+  it('downloads when sharing is unsupported', async () => {
+    const download = vi.fn()
+    const share = vi.fn(async () => undefined)
+    expect(await deliverBackup(file, { canShareFiles: () => false, share, download })).toBe('downloaded')
+    expect(download).toHaveBeenCalledWith(file)
+    expect(share).not.toHaveBeenCalled()
   })
 })

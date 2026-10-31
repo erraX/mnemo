@@ -10,20 +10,23 @@ export interface ShareDeps {
   download(file: File): void
 }
 
-export type DeliverOutcome = 'shared' | 'downloaded' | 'cancelled'
+export type DeliverOutcome = 'shared' | 'downloaded' | 'cancelled' | 'failed'
 
-/** iOS：分享面板 → 存储到文件（iCloud Drive）；桌面或不支持时下载 */
+/**
+ * iOS：分享面板 → 存储到文件（iCloud Drive）；不支持分享文件时才下载。
+ * 分享报错（如丢失用户激活的 NotAllowedError）不退回下载：主屏 PWA 里下载可能静默失败，不能当作已备份。
+ */
 export async function deliverBackup(file: File, deps: ShareDeps): Promise<DeliverOutcome> {
-  if (deps.canShareFiles(file)) {
-    try {
-      await deps.share(file)
-      return 'shared'
-    } catch (e) {
-      if ((e as { name?: string }).name === 'AbortError') return 'cancelled'
-    }
+  if (!deps.canShareFiles(file)) {
+    deps.download(file)
+    return 'downloaded'
   }
-  deps.download(file)
-  return 'downloaded'
+  try {
+    await deps.share(file)
+    return 'shared'
+  } catch (e) {
+    return (e as { name?: string }).name === 'AbortError' ? 'cancelled' : 'failed'
+  }
 }
 
 export function browserShareDeps(): ShareDeps {

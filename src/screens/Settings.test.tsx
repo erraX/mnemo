@@ -41,6 +41,25 @@ describe('Settings', () => {
     expect((await getSettings(db)).lastBackupAt).toBeUndefined()
   })
 
+  it('a failed share is not recorded; the next tap shares the prepared file again', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    const share = vi.fn(async (_file: File) => undefined)
+    share.mockRejectedValueOnce(Object.assign(new Error('denied'), { name: 'NotAllowedError' }))
+    const download = vi.fn()
+    renderWithRouter(<Settings shareDeps={{ canShareFiles: () => true, share, download }} />, { route: '/settings', path: '/settings' })
+    fireEvent.click(await screen.findByRole('button', { name: /备份到文件/ }))
+    expect(await screen.findByText('备份文件已准备好，再点一次分享')).toBeTruthy()
+    expect(share).toHaveBeenCalledTimes(1)
+    expect(download).not.toHaveBeenCalled()
+    expect((await getSettings(db)).lastBackupAt).toBeUndefined()
+
+    fireEvent.click(screen.getByRole('button', { name: /备份到文件/ }))
+    expect(await screen.findByText('已备份')).toBeTruthy()
+    expect(share).toHaveBeenCalledTimes(2)
+    expect(share.mock.calls[1]![0]).toBe(share.mock.calls[0]![0])
+    expect((await getSettings(db)).lastBackupAt).toBeTypeOf('number')
+  })
+
   it('restores from a valid file after confirmation and rejects invalid files', async () => {
     await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
     const file = backupToFile(await exportBackup(db))

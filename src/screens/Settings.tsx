@@ -42,6 +42,8 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
   const dictCount = useLiveQuery(() => db.dict.count(), [], 0)
   const [msg, setMsg] = useState<string | undefined>(undefined)
   const [busy, setBusy] = useState(false)
+  /** 上次分享失败的备份文件；再点一次时直接分享，不再先读库（分享必须在点击的用户激活期内发起） */
+  const [pendingFile, setPendingFile] = useState<File | undefined>(undefined)
   const [prefetching, setPrefetching] = useState<string | undefined>(undefined)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -62,9 +64,12 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
     setBusy(true)
     setMsg(undefined)
     try {
-      const file = backupToFile(await exportBackup(db))
-      const outcome = await deliverBackup(file, shareDeps ?? browserShareDeps())
+      const deps = shareDeps ?? browserShareDeps()
+      const file = pendingFile ?? backupToFile(await exportBackup(db))
+      const outcome = await deliverBackup(file, deps)
       if (outcome === 'cancelled') { setMsg('已取消'); return }
+      if (outcome === 'failed') { setPendingFile(file); setMsg('备份文件已准备好，再点一次分享'); return }
+      setPendingFile(undefined)
       await markBackedUp(db)
       setMsg('已备份')
     } catch {
