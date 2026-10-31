@@ -270,10 +270,10 @@ interface Settings {         // 单例
 - manifest：`display: standalone`、`name`/`short_name`、`theme_color`、`background_color`、192/512 图标；`<link rel="apple-touch-icon">` 180；`<meta name="viewport" content="... viewport-fit=cover">`；`apple-mobile-web-app-status-bar-style`。
 - iOS 适配清单：safe-area insets（`env(safe-area-inset-*)`）、用 `100dvh` 不用 `100vh`、所有输入框字号 ≥ 16px 防止聚焦缩放、`touch-action: manipulation` 防双击缩放、`overscroll-behavior: none` 防橡皮筋、底部按钮避开 home indicator。
 - 部署：GitHub Pages。公开仓库 `mnemo`，`.github/workflows/deploy.yml` 在 `main` 推送时用 `actions/upload-pages-artifact` + `actions/deploy-pages` 发布 `dist/`。GitHub 仓库创建与 Pages 开启（Source = GitHub Actions）由作者完成。
-- 生产地址：`https://<github-username>.github.io/mnemo/`（用户名待作者建仓后填入）。**生产地址是数据的身份证**，README 里写明：不换用户名、不绑自定义域名；非要换时先导出再导入。
+- 生产地址：`https://errax.github.io/mnemo/`（GitHub 用户 erraX，Pages 主机名小写）。**生产地址是数据的身份证**，README 里写明：不换用户名、不绑自定义域名；非要换时先导出再导入。
 - 子路径配置：Vite `base: '/mnemo/'`；manifest `scope` 和 `start_url` 都是 `/mnemo/`；Service Worker 注册在 `/mnemo/` 作用域下；路由用相应 basename。
 - 共享 origin：`<用户名>.github.io` 下所有 Pages 项目共用 IndexedDB / Cache Storage 命名空间。Dexie 数据库名固定为 `mnemo`，Cache 名前缀 `mnemo-`，避免和作者其他项目撞名。
-- 非生产地址提示：构建时注入 `VITE_PRODUCTION_ORIGIN`（即 `https://<github-username>.github.io`）；运行时 `location.origin` 不一致（本地开发、预览）就在首页顶部常驻一条"这不是正式地址，这里的数据不会保留"的提示条。
+- 非生产地址提示：构建时注入 `VITE_PRODUCTION_ORIGIN`（即 `https://errax.github.io`）；运行时 `location.origin` 不一致（本地开发、预览）就在首页顶部常驻一条"这不是正式地址，这里的数据不会保留"的提示条。
 - GitHub Pages 对所有文件设 `Cache-Control: max-age=600`：Vite 产物带 hash 不受影响；`sw.js` 最多延迟 10 分钟发现新版，可接受。
 - 本地开发：`vite --host` 在 Mac 浏览器或手机上看效果，但 `http://192.168.x.x` 下没有 Service Worker，那里的数据视为一次性。
 
@@ -351,7 +351,7 @@ public/
 
 ## 8. 验收标准
 
-- [ ] `https://<github-username>.github.io/mnemo/` 可访问，iPhone Safari "添加到主屏幕"，图标名 "Mnemo"，启动无地址栏
+- [ ] `https://errax.github.io/mnemo/` 可访问，iPhone Safari "添加到主屏幕"，图标名 "Mnemo"，启动无地址栏
 - [ ] 飞行模式下从主屏打开，能复习、能建卡、能查词典
 - [ ] 输入 `concerns` 自动补全为 `concern` 的音标与释义；粘贴含 `concerns` 的句子自动挖空；点词可改
 - [ ] 勾选三个卡型保存，卡片列表显示 3 张；取消一个卡型对应卡消失

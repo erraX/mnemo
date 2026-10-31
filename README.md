@@ -8,7 +8,7 @@ Mockup：`docs/mockups/mnemo-mockups.html`
 ## 地址就是数据的身份证
 
 数据存在浏览器 IndexedDB，按 origin 隔离。生产地址是
-`https://<github-username>.github.io/mnemo/`。
+`https://errax.github.io/mnemo/`。
 
 - 不要改 GitHub 用户名，不要绑自定义域名——都会换 origin，旧数据留在旧地址里。
 - 改仓库名只改路径，数据不丢，但需要同步改 `vite.config.ts` 里的 `base` 和 manifest。

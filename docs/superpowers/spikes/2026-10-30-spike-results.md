@@ -1,7 +1,7 @@
 # Spike 结果
 
 设备 / iOS 版本：
-测试地址：https://<user>.github.io/mnemo/#/spike/audio 与 #/spike/tts
+测试地址：https://errax.github.io/mnemo/#/spike/audio 与 #/spike/tts
 
 ## Spike 1 · 有道音频离线缓存（规范 5.7）
 
