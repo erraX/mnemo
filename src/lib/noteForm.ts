@@ -103,7 +103,14 @@ export function reduceForm(s: NoteFormState, a: NoteFormAction): NoteFormState {
     case 'reset':
       return a.state
     case 'headword':
-      return { ...s, headword: a.value, dict: { status: 'idle', forms: [] }, examples: redetect(s.examples, a.value, []) }
+      return {
+        ...s,
+        headword: a.value,
+        dict: { status: 'idle', forms: [] },
+        examples: redetect(s.examples, a.value, []),
+        // 手动输入词头（如短语）也算选定，收起句中选词器
+        pendingHeadwordPick: a.value.length === 0 && s.pendingHeadwordPick,
+      }
     case 'dictResult': {
       if (!a.result) {
         return {

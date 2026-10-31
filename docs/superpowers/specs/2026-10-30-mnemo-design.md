@@ -215,7 +215,7 @@ interface Settings {         // 单例
 - 一个多行文本框 + "粘贴"按钮（`navigator.clipboard.readText()`，失败则让用户手动粘贴）。
 - 提交后按行拆分，去空行、trim、去重，每行一条草稿。启发式：≥ 4 个词或以句号/问号/感叹号结尾 → `sentence`，否则 `headword`。
 - 草稿列表每条显示状态：`headword` 类在后台查词典，显示"词典已补全 · 缺例句"或"词典没有 · 需要自己写释义"；`sentence` 类显示"点一个词作为要记的词"。
-- 点开草稿 → 进入建卡表单：`headword` 类预填 headword；`sentence` 类预填例句，用户在句子里点一个或连续几个词设为 headword（随即触发词典查询）。保存后草稿删除。
+- 点开草稿 → 进入建卡表单：`headword` 类预填 headword；`sentence` 类预填例句，用户在句子里点一个词设为 headword（点选单个词；短语请手动输入），随即触发词典查询。保存后草稿删除。
 - 草稿用行尾「✕」按钮删除（二次确认），不做左滑手势。首页显示收集箱待处理数量。
 - iOS Safari 不支持 Web Share Target，所以没有"分享到本应用"入口；明确不做。
 

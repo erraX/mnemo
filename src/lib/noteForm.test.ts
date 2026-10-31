@@ -162,4 +162,11 @@ describe('drafts', () => {
     expect(s2.pendingHeadwordPick).toBe(false)
     expect(s2.examples[0]!.blanks).toEqual([{ start: 12, end: 20 }])
   })
+  it('typing a headword dismisses the picker (phrases are typed by hand)', () => {
+    const s1 = reduceForm(initialForm([...ALL]), { type: 'prefillDraft', draft: { id: 'd', raw: 'I have some concerns about it.', kind: 'sentence', createdAt: 1 } })
+    const s2 = reduceForm(s1, { type: 'headword', value: 'leverage' })
+    expect(s2.headword).toBe('leverage')
+    expect(s2.pendingHeadwordPick).toBe(false)
+    expect(reduceForm(s1, { type: 'headword', value: '' }).pendingHeadwordPick).toBe(true)
+  })
 })
