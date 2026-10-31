@@ -38,11 +38,14 @@ export function createPlayer(deps: PlayerDeps) {
   const setT = deps.setTimeout ?? setTimeout
   const clearT = deps.clearTimeout ?? clearTimeout
   let el: AudioElementLike | undefined
+  // cleanup / abortCurrent track the in-flight play so finish() and stop() can
+  // guard by reference-equality and avoid touching a newer play's state.
   let cleanup: (() => void) | undefined
+  let abortCurrent: (() => void) | undefined
 
   function stop() {
-    cleanup?.()
-    cleanup = undefined
+    abortCurrent?.()
+    abortCurrent = undefined
     el?.pause()
   }
 
@@ -52,25 +55,42 @@ export function createPlayer(deps: PlayerDeps) {
     const audio = el
     return new Promise<PlayOutcome>((resolve) => {
       let settled = false
-      const finish = (outcome: PlayOutcome) => {
+      // finish and fallback reference localCleanup/localAbort which are
+      // declared below; safe because they are only called asynchronously
+      // (event listeners / timer / promise rejection) after all consts are set.
+      const finish = (o: PlayOutcome) => {
         if (settled) return
-        settled = true
-        cleanup?.()
-        cleanup = undefined
-        resolve(outcome)
+        localCleanup()
+        if (cleanup === localCleanup) cleanup = undefined
+        if (abortCurrent === localAbort) abortCurrent = undefined
+        resolve(o)
       }
       const fallback = () => {
-        audio.pause()
+        if (settled) return           // guard: prevent double side-effects when
+        audio.pause()                 // error event AND play() rejection both fire
         finish(deps.speak(text, accent) ? 'tts' : 'none')
       }
       const onPlaying = () => finish('youdao')
       const onError = () => fallback()
       const timer = setT(fallback, timeoutMs)
-      cleanup = () => {
+      // Per-play cleanup: marks this play settled before removing listeners so
+      // that any stale async callback (e.g. rejected play() promise) exits early.
+      const localCleanup = () => {
+        settled = true
         clearT(timer)
         audio.removeEventListener('playing', onPlaying)
         audio.removeEventListener('error', onError)
       }
+      // localAbort is called by stop() to cancel this play gracefully with 'none'.
+      const localAbort = () => {
+        if (settled) return
+        localCleanup()
+        if (cleanup === localCleanup) cleanup = undefined
+        if (abortCurrent === localAbort) abortCurrent = undefined
+        resolve('none')
+      }
+      cleanup = localCleanup
+      abortCurrent = localAbort
       audio.addEventListener('playing', onPlaying)
       audio.addEventListener('error', onError)
       audio.src = youdaoUrl(text, accent)

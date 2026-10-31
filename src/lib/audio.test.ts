@@ -87,4 +87,71 @@ describe('createPlayer', () => {
     expect(FakeAudio.instances).toHaveLength(1)
     expect(FakeAudio.instances[0]!.src).toBe(youdaoUrl('b', 'us'))
   })
+
+  it('speaks exactly once when the element both errors and rejects play()', async () => {
+    // Simulates real browser: error event fires AND play() returns a rejected promise.
+    // Without the settle-once guard, fallback() runs twice → speak() called twice.
+    const listeners: Record<string, (() => void)[]> = {}
+    const fakeAudio: AudioElementLike = {
+      src: '',
+      addEventListener(type, cb) { (listeners[type] ??= []).push(cb) },
+      removeEventListener(type, cb) { listeners[type] = (listeners[type] ?? []).filter((x) => x !== cb) },
+      play() {
+        queueMicrotask(() => listeners['error']?.forEach((cb) => cb()))
+        return Promise.reject(new Error('AbortError'))
+      },
+      pause() {},
+    }
+    const speak = vi.fn(() => true)
+    const p = createPlayer({ createElement: () => fakeAudio, speak, timeoutMs: 3000 })
+    const result = p.play('concern', 'us')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await result).toBe('tts')
+    expect(speak).toHaveBeenCalledTimes(1)
+  })
+
+  it('a superseded play does not hijack the next one', async () => {
+    // Simulates real browser: stop() → pause() → browser rejects the pending play() promise.
+    // Without per-play cleanup isolation, stale fallback pauses B and strips B's listeners.
+    let pendingReject: ((e: Error) => void) | undefined
+    let playCount = 0
+    const listeners: Record<string, (() => void)[]> = {}
+    const fakeAudio: AudioElementLike = {
+      src: '',
+      addEventListener(type, cb) { (listeners[type] ??= []).push(cb) },
+      removeEventListener(type, cb) { listeners[type] = (listeners[type] ?? []).filter((x) => x !== cb) },
+      play() {
+        playCount++
+        if (playCount === 1) {
+          // Play A: never resolves until pause() is called
+          return new Promise<void>((_, reject) => { pendingReject = reject })
+        }
+        // Play B: fires playing event
+        queueMicrotask(() => listeners['playing']?.forEach((cb) => cb()))
+        return Promise.resolve()
+      },
+      pause() {
+        const r = pendingReject; pendingReject = undefined
+        r?.(new Error('AbortError'))
+      },
+    }
+    const speak = vi.fn(() => true)
+    const p = createPlayer({ createElement: () => fakeAudio, speak, timeoutMs: 3000 })
+    const a = p.play('hello', 'us')   // silent — never fires playing
+    const b = p.play('world', 'us')   // stop()→pause() rejects A's play(); B fires playing
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await b).toBe('youdao')
+    expect(speak).not.toHaveBeenCalled()
+    expect(await a).toBe('none')
+  })
+
+  it('stop() resolves a pending play with none', async () => {
+    FakeAudio.mode = 'silent'
+    const speak = vi.fn(() => true)
+    const p = createPlayer({ createElement: () => new FakeAudio(), speak, timeoutMs: 3000 })
+    const result = p.play('concern', 'us')
+    p.stop()
+    expect(await result).toBe('none')
+    expect(speak).not.toHaveBeenCalled()
+  })
 })
