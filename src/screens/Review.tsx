@@ -126,7 +126,7 @@ export function Review() {
           <span className="font-semibold">剩余 {session.queue.length}</span>
           <div className="flex gap-4">
             <button type="button" className="text-accent disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
-            <button type="button" className="text-accent" onClick={() => navigate(`/note/${current.noteId}?from=review`)}>编辑</button>
+            <button type="button" className="text-accent" onClick={() => navigate(`/note/${current.noteId}`)}>编辑</button>
           </div>
         </div>
 

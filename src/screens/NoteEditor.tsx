@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { db } from '@/db/db'
 import { createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, updateNote } from '@/db/repo'
 import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type Note } from '@/domain/types'
@@ -17,9 +17,15 @@ export const LOOKUP_DEBOUNCE_MS = 300
 
 const inputCls = 'w-full bg-transparent text-base outline-none placeholder:text-muted'
 
+/** 按 id 重建编辑器：/note/new ↔ /note/:id、/note/A → /note/B 之间不共用表单状态 */
+export function NoteEditorRoute() {
+  const { id } = useParams<{ id: string }>()
+  return <NoteEditor key={id ?? 'new'} />
+}
+
 export function NoteEditor() {
   const { id } = useParams<{ id: string }>()
-  const [params] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const audio = useAudio()
   const mode: 'new' | 'edit' = id ? 'edit' : 'new'
@@ -30,6 +36,9 @@ export function NoteEditor() {
   const [loadedFor, setLoadedFor] = useState<string | undefined>(undefined)
   const [duplicate, setDuplicate] = useState<Note | undefined>(undefined)
   const [saving, setSaving] = useState(false)
+  // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
+  const [headwordDirty, setHeadwordDirty] = useState(false)
+  const lookupEnabled = mode === 'new' || headwordDirty
   const headwordRef = useRef<HTMLInputElement>(null)
 
   // 初始化（各只做一次）：新建等 settings 到位后只接管上次勾选的卡型，不覆盖用户在此之前已输入的内容；编辑等记录到位后用记录内容
@@ -52,14 +61,15 @@ export function NoteEditor() {
     if (!headword) { setDuplicate(undefined); return }
     let cancelled = false
     const t = setTimeout(() => {
-      void lookupWord(db, headword).then((result) => { if (!cancelled) dispatch({ type: 'dictResult', result }) })
+      if (lookupEnabled) void lookupWord(db, headword).then((result) => { if (!cancelled) dispatch({ type: 'dictResult', result }) })
       void findDuplicate(db, headword, id).then((d) => { if (!cancelled) setDuplicate(d) })
     }, LOOKUP_DEBOUNCE_MS)
     return () => { cancelled = true; clearTimeout(t) }
-  }, [form.headword, id])
+  }, [form.headword, id, lookupEnabled])
 
   const availability = formAvailability(form)
-  const goBack = () => (params.get('from') === 'review' ? navigate(-1) : navigate('/'))
+  // 有来路就回上一屏（复习 / 卡片列表）；直接打开的页面 location.key 是 'default'，回首页
+  const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/', { replace: true }))
 
   async function save() {
     if (!canSave(form) || saving) return
@@ -87,7 +97,7 @@ export function NoteEditor() {
     if (!id) return
     if (!window.confirm('删除这条记录和它的全部卡片、复习记录？')) return
     await deleteNote(db, id)
-    navigate('/')
+    goBack()
   }
 
   const dictHint =
@@ -111,7 +121,7 @@ export function NoteEditor() {
             value={form.headword}
             autoCapitalize="none"
             autoCorrect="off"
-            onChange={(e) => dispatch({ type: 'headword', value: e.target.value })}
+            onChange={(e) => { setHeadwordDirty(true); dispatch({ type: 'headword', value: e.target.value }) }}
           />
           {form.dict.lemma && (
             <button type="button" className="mt-1 text-sm text-accent" onClick={() => dispatch({ type: 'acceptLemma' })}>

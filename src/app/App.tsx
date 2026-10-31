@@ -2,7 +2,7 @@ import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
-import { NoteEditor } from '@/screens/NoteEditor'
+import { NoteEditorRoute } from '@/screens/NoteEditor'
 import { Placeholder } from '@/screens/Placeholder'
 import { Review } from '@/screens/Review'
 import { SettingsStub } from '@/screens/SettingsStub'
@@ -32,8 +32,8 @@ function Shell() {
         </Route>
         <Route path="/review" element={<Review />} />
         <Route path="/inbox" element={<Placeholder title="收集箱" />} />
-        <Route path="/note/new" element={<NoteEditor />} />
-        <Route path="/note/:id" element={<NoteEditor />} />
+        <Route path="/note/new" element={<NoteEditorRoute />} />
+        <Route path="/note/:id" element={<NoteEditorRoute />} />
         <Route path="/spike/audio" element={<AudioSpike />} />
         <Route path="/spike/tts" element={<TtsSpike />} />
         <Route path="*" element={<Placeholder title="未找到" />} />

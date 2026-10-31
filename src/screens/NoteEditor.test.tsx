@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { db } from '@/db/db'
 import { createNote } from '@/db/repo'
 import * as dictModule from '@/lib/dict'
 import { renderWithRouter } from '@/test/render'
-import { NoteEditor, LOOKUP_DEBOUNCE_MS } from './NoteEditor'
+import { NoteEditor, NoteEditorRoute, LOOKUP_DEBOUNCE_MS } from './NoteEditor'
 
 vi.mock('@/app/useAudio', () => ({
   useAudio: () => ({ accent: 'us', play: vi.fn(async () => 'youdao'), prefetch: vi.fn(async () => undefined) }),
@@ -97,6 +98,55 @@ describe('NoteEditor (edit)', () => {
     await waitFor(() => expect(confirm).toHaveBeenCalled())
     expect(confirm.mock.calls[0]![0]).toContain('中 → 英')
     expect(await db.cards.where('noteId').equals(note.id).count()).toBe(2)
+  })
+
+  it('shows no dictionary hints until the headword is changed, but still warns about duplicates', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    const note = await createNote(db, { headword: 'concerns', meaning: 'y', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    await db.dict.put({ word: 'concern', phonetic: "kən'sə:n", translation: 'n. 担忧', forms: ['concerns', 'concerned'] })
+    renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concerns'))
+    await new Promise((r) => setTimeout(r, LOOKUP_DEBOUNCE_MS + 50))
+    expect(screen.queryByText('已从词典补全')).toBeNull()
+    expect(screen.queryByRole('button', { name: /改为原形/ })).toBeNull()
+    expect((screen.getByLabelText('释义') as HTMLTextAreaElement).value).toBe('y')
+
+    fireEvent.change(screen.getByLabelText('单词 / 短语'), { target: { value: 'concern' } })
+    await waitFor(() => expect(screen.getByText(/已有同名记录/)).toBeTruthy())
+    expect(screen.getByText('已从词典补全')).toBeTruthy()
+  })
+
+  it('goes back to the previous screen after save when there is history, else home', async () => {
+    const note = await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    const routes = (
+      <Routes>
+        <Route path="/" element={<div data-testid="home" />} />
+        <Route path="/cards" element={<div data-testid="cards" />} />
+        <Route path="/note/:id" element={<NoteEditor />} />
+      </Routes>
+    )
+    const first = render(<MemoryRouter initialEntries={['/cards', `/note/${note.id}`]}>{routes}</MemoryRouter>)
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern'))
+    fireEvent.click(screen.getByRole('button', { name: '保存修改' }))
+    await screen.findByTestId('cards')
+    first.unmount()
+
+    render(<MemoryRouter initialEntries={[`/note/${note.id}`]}>{routes}</MemoryRouter>)
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern'))
+    fireEvent.click(screen.getByRole('button', { name: '保存修改' }))
+    await screen.findByTestId('home')
+  })
+
+  it('NoteEditorRoute remounts the editor when the id changes', async () => {
+    const a = await createNote(db, { headword: 'concern', meaning: 'aaa', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    await createNote(db, { headword: 'concern', meaning: 'bbb', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<NoteEditorRoute />, { route: `/note/${a.id}`, path: '/note/:id' })
+    await waitFor(() => expect((screen.getByLabelText('释义') as HTMLTextAreaElement).value).toBe('aaa'))
+    const view = await screen.findByRole('link', { name: '查看' })
+    fireEvent.click(view)
+    // 换了 id 就是新的编辑器：不会带着 A 的表单（保存可用）等 B 加载
+    expect((screen.getByRole('button', { name: '保存修改' }) as HTMLButtonElement).disabled).toBe(true)
+    await waitFor(() => expect((screen.getByLabelText('释义') as HTMLTextAreaElement).value).toBe('bbb'))
   })
 
   it('deletes the note after confirmation', async () => {
