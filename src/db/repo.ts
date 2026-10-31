@@ -31,11 +31,9 @@ function normalizeInput(input: NoteInput): NoteInput {
   }
 }
 
-export async function createNote(
-  db: MnemoDB, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler, opts: { draftId?: string } = {},
-): Promise<Note> {
-  const input = normalizeInput(raw)
-  const note: Note = {
+/** 构造已规范化的记录，不写库；手动建卡与批量导入使用相同字段规则 */
+function makeNote(input: NoteInput, now: number): Note {
+  return {
     id: crypto.randomUUID(),
     headword: input.headword,
     headwordKey: headwordKey(input.headword),
@@ -47,6 +45,13 @@ export async function createNote(
     createdAt: now,
     updatedAt: now,
   }
+}
+
+export async function createNote(
+  db: MnemoDB, raw: NoteInput, now = Date.now(), sched: Scheduler = defaultScheduler, opts: { draftId?: string } = {},
+): Promise<Note> {
+  const input = normalizeInput(raw)
+  const note = makeNote(input, now)
   await db.transaction('rw', db.notes, db.cards, db.settings, db.drafts, async () => {
     await db.notes.add(note)
     await db.cards.bulkAdd(input.enabledTypes.map((t) => sched.newCard(note.id, t, now)))
@@ -54,6 +59,44 @@ export async function createNote(
     if (opts.draftId) await db.drafts.delete(opts.draftId)
   })
   return note
+}
+
+export interface NoteImportPreview {
+  entries: NoteInput[]
+  skipped: number
+  cardCount: number
+}
+
+/** 只读；文件内首条有效记录优先，不覆盖已有词。写入时必须在事务中再次调用。 */
+export async function previewNoteImport(db: MnemoDB, inputs: readonly NoteInput[]): Promise<NoteImportPreview> {
+  const seen = new Set(await db.notes.orderBy('headwordKey').keys())
+  const entries: NoteInput[] = []
+  let skipped = 0
+  for (const raw of inputs) {
+    const input = normalizeInput(raw)
+    if (!input.headword || !input.meaning) throw new Error('词头和释义不能为空')
+    const key = headwordKey(input.headword)
+    if (seen.has(key)) { skipped += 1; continue }
+    seen.add(key)
+    entries.push(input)
+  }
+  return { entries, skipped, cardCount: entries.reduce((n, e) => n + e.enabledTypes.length, 0) }
+}
+
+/** 追加导入：并发 rw 事务串行化去重与写入；失败整批回滚，不动设置和历史。 */
+export async function importNotes(
+  db: MnemoDB, inputs: readonly NoteInput[], now = Date.now(), sched: Scheduler = defaultScheduler,
+): Promise<{ notes: Note[]; skipped: number; cardCount: number }> {
+  return db.transaction('rw', db.notes, db.cards, async () => {
+    const { entries, skipped, cardCount } = await previewNoteImport(db, inputs)
+    const notes = entries.map((input) => makeNote(input, now))
+    if (notes.length) {
+      await db.notes.bulkAdd(notes)
+      const cards = notes.flatMap((note) => note.enabledTypes.map((type) => sched.newCard(note.id, type, now)))
+      await db.cards.bulkAdd(cards)
+    }
+    return { notes, skipped, cardCount }
+  })
 }
 
 /** 只读：保存前预览哪些卡型会新建 / 删除，供编辑器弹出二次确认 */
