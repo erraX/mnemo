@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { db } from '@/db/db'
 import { createNote } from '@/db/repo'
+import * as dictModule from '@/lib/dict'
 import { renderWithRouter } from '@/test/render'
-import { NoteEditor } from './NoteEditor'
+import { NoteEditor, LOOKUP_DEBOUNCE_MS } from './NoteEditor'
 
 vi.mock('@/app/useAudio', () => ({
   useAudio: () => ({ accent: 'us', play: vi.fn(async () => 'youdao'), prefetch: vi.fn(async () => undefined) }),
@@ -49,6 +50,39 @@ describe('NoteEditor (new)', () => {
     fireEvent.change(screen.getByLabelText('单词 / 短语'), { target: { value: 'Concern' } })
     await waitFor(() => expect(screen.getByText(/已有同名记录/)).toBeTruthy())
     expect((screen.getByRole('button', { name: /保存 · 生成/ }) as HTMLButtonElement).disabled).toBe(false)
+  })
+})
+
+describe('NoteEditor (stale lookup guard)', () => {
+  it('discards a stale dict result when headword changes before it resolves', async () => {
+    let resolveFirst!: (r: { entry: { word: string; phonetic: string; translation: string; forms: string[] }; viaForm: boolean } | undefined) => void
+    const firstDeferred = new Promise<{ entry: { word: string; phonetic: string; translation: string; forms: string[] }; viaForm: boolean } | undefined>((res) => {
+      resolveFirst = res
+    })
+    const spy = vi.spyOn(dictModule, 'lookupWord')
+    spy.mockImplementationOnce(() => firstDeferred)                        // concern → deferred
+    spy.mockImplementationOnce(() => Promise.resolve(undefined))           // leverage → miss
+
+    renderWithRouter(<NoteEditor />, { route: '/note/new', path: '/note/new' })
+
+    // type 'concern' and wait for debounce to fire
+    fireEvent.change(screen.getByLabelText('单词 / 短语'), { target: { value: 'concern' } })
+    await new Promise((r) => setTimeout(r, LOOKUP_DEBOUNCE_MS + 50))
+
+    // type 'leverage' — cleanup should set cancelled=true for the in-flight concern lookup
+    fireEvent.change(screen.getByLabelText('单词 / 短语'), { target: { value: 'leverage' } })
+    await new Promise((r) => setTimeout(r, LOOKUP_DEBOUNCE_MS + 50))
+
+    // wait for the miss result to be reflected
+    await waitFor(() => expect(screen.getByText('词典没有，手动填写')).toBeTruthy())
+
+    // now resolve the stale first lookup — must be discarded by the cancelled flag
+    resolveFirst({ entry: { word: 'concern', phonetic: "kən'sə:n", translation: 'n. 担忧', forms: [] }, viaForm: false })
+    await new Promise((r) => setTimeout(r, 50))
+
+    // stale result must not overwrite the current state
+    expect((screen.getByLabelText('音标') as HTMLInputElement).value).toBe('')
+    expect(screen.getByText('词典没有，手动填写')).toBeTruthy()
   })
 })
 

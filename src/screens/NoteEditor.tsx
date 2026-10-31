@@ -50,11 +50,12 @@ export function NoteEditor() {
   useEffect(() => {
     const headword = form.headword.trim()
     if (!headword) { setDuplicate(undefined); return }
+    let cancelled = false
     const t = setTimeout(() => {
-      void lookupWord(db, headword).then((result) => dispatch({ type: 'dictResult', result }))
-      void findDuplicate(db, headword, id).then(setDuplicate)
+      void lookupWord(db, headword).then((result) => { if (!cancelled) dispatch({ type: 'dictResult', result }) })
+      void findDuplicate(db, headword, id).then((d) => { if (!cancelled) setDuplicate(d) })
     }, LOOKUP_DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [form.headword, id])
 
   const availability = formAvailability(form)
@@ -151,7 +152,7 @@ export function NoteEditor() {
                 <ClozeEditor text={ex.text} blanks={ex.blanks} onChange={(blanks) => dispatch({ type: 'exampleBlanks', id: ex.id, blanks })} />
               </>
             )}
-            <input aria-label={`来源 ${i + 1}`} className={`${inputCls} mt-1 text-sm`} placeholder="来源：文章名 / 剧名（可空）" value={ex.source} onChange={(e) => dispatch({ type: 'exampleSource', id: ex.id, value: e.target.value })} />
+            <input aria-label={`来源 ${i + 1}`} className={`${inputCls} mt-1`} placeholder="来源：文章名 / 剧名（可空）" value={ex.source} onChange={(e) => dispatch({ type: 'exampleSource', id: ex.id, value: e.target.value })} />
           </Field>
         ))}
         <Button variant="secondary" onClick={() => dispatch({ type: 'addExample' })}>+ 添加例句</Button>
