@@ -1,11 +1,6 @@
 import { useRef, useState } from 'react'
-
-type Accent = 'us' | 'uk'
-
-export function youdaoUrl(text: string, accent: Accent): string {
-  const type = accent === 'uk' ? 1 : 2
-  return `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&type=${type}`
-}
+import { youdaoUrl } from '@/lib/audio'
+import type { Accent } from '@/domain/types'
 
 export function AudioSpike() {
   const [text, setText] = useState('concern')
