@@ -4,6 +4,7 @@ import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
 import { Inbox } from '@/screens/Inbox'
 import { NoteEditorRoute } from '@/screens/NoteEditor'
+import { Cards } from '@/screens/Cards'
 import { Placeholder } from '@/screens/Placeholder'
 import { Review } from '@/screens/Review'
 import { SettingsStub } from '@/screens/SettingsStub'
@@ -28,7 +29,7 @@ function Shell() {
       <Routes>
         <Route element={<WithTabs />}>
           <Route path="/" element={<Today dict={dict} />} />
-          <Route path="/cards" element={<Placeholder title="卡片" />} />
+          <Route path="/cards" element={<Cards />} />
           <Route path="/settings" element={<SettingsStub />} />
         </Route>
         <Route path="/review" element={<Review />} />
