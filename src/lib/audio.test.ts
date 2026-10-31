@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createPlayer, prefetchAudio, youdaoUrl, type AudioElementLike } from './audio'
+import { createPlayer, prefetchAudio, unlockSpeech, youdaoUrl, type AudioElementLike } from './audio'
 
 class FakeAudio implements AudioElementLike {
   src = ''
@@ -32,6 +32,32 @@ describe('prefetchAudio', () => {
     expect(ok).toHaveBeenCalledWith(youdaoUrl('concern', 'us'), { mode: 'no-cors' })
     const bad = vi.fn(async () => { throw new Error('offline') }) as unknown as typeof fetch
     await expect(prefetchAudio('concern', 'us', bad)).resolves.toBeUndefined()
+  })
+})
+
+describe('unlockSpeech', () => {
+  it('is a no-op without speechSynthesis and speaks one silent utterance once when it exists', () => {
+    const g = globalThis as { speechSynthesis?: unknown; SpeechSynthesisUtterance?: unknown }
+    const saved = { synth: g.speechSynthesis, utt: g.SpeechSynthesisUtterance }
+    try {
+      delete g.speechSynthesis
+      delete g.SpeechSynthesisUtterance
+      expect(() => unlockSpeech()).not.toThrow()
+
+      const speak = vi.fn()
+      class FakeUtterance { volume = 1; constructor(public text: string) {} }
+      g.speechSynthesis = { speak }
+      g.SpeechSynthesisUtterance = FakeUtterance
+      unlockSpeech()
+      unlockSpeech()
+      expect(speak).toHaveBeenCalledTimes(1)
+      const u = speak.mock.calls[0]![0] as FakeUtterance
+      expect(u.text).toBe('')
+      expect(u.volume).toBe(0)
+    } finally {
+      g.speechSynthesis = saved.synth
+      g.SpeechSynthesisUtterance = saved.utt
+    }
   })
 })
 

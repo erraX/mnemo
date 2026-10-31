@@ -101,6 +101,25 @@ export function createPlayer(deps: PlayerDeps) {
   return { play, stop }
 }
 
+let speechUnlocked = false
+
+/**
+ * iOS 上页面首次 speak 若不在用户手势内会静音，而 TTS 降级发生在超时 / error 之后（已离开手势）。
+ * 在点击里先说一句静音空话把 speechSynthesis 解锁；永不抛错。
+ */
+export function unlockSpeech(): void {
+  if (speechUnlocked) return
+  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return
+  try {
+    const u = new SpeechSynthesisUtterance('')
+    u.volume = 0
+    speechSynthesis.speak(u)
+    speechUnlocked = true
+  } catch {
+    /* 解锁失败不影响播放；下次手势再试 */
+  }
+}
+
 /** 浏览器实现：speechSynthesis；首次必须由用户手势触发 */
 export function systemSpeak(text: string, accent: Accent): boolean {
   if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return false

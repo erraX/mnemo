@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { db } from '@/db/db'
 import { getSettings } from '@/db/repo'
 import { DEFAULT_SETTINGS } from '@/domain/types'
-import { createPlayer, prefetchAudio, systemSpeak, type PlayOutcome } from '@/lib/audio'
+import { createPlayer, prefetchAudio, systemSpeak, unlockSpeech, type PlayOutcome } from '@/lib/audio'
 
 let shared: ReturnType<typeof createPlayer> | undefined
 function player() {
@@ -17,7 +17,8 @@ export function useAudio(): { play(text: string): Promise<PlayOutcome>; prefetch
   return useMemo(
     () => ({
       accent,
-      play: (text: string) => player().play(text, accent),
+      // play 总是在点击 / 翻面手势内调用，趁机解锁系统 TTS，超时后的降级才能出声
+      play: (text: string) => { unlockSpeech(); return player().play(text, accent) },
       prefetch: (text: string) => prefetchAudio(text, accent),
     }),
     [accent],
