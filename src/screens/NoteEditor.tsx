@@ -18,10 +18,12 @@ export const LOOKUP_DEBOUNCE_MS = 300
 
 const inputCls = 'w-full bg-transparent text-base outline-none placeholder:text-muted'
 
-/** 按 id 重建编辑器：/note/new ↔ /note/:id、/note/A → /note/B 之间不共用表单状态 */
+/** 按 id 和草稿重建编辑器：/note/new ↔ /note/:id、换草稿、/note/A → /note/B 之间不共用表单状态 */
 export function NoteEditorRoute() {
   const { id } = useParams<{ id: string }>()
-  return <NoteEditor key={id ?? 'new'} />
+  const [params] = useSearchParams()
+  const draftId = params.get('draft') ?? ''
+  return <NoteEditor key={`${id ?? 'new'}:${draftId}`} />
 }
 
 export function NoteEditor() {
