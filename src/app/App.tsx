@@ -2,6 +2,7 @@ import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
+import { Inbox } from '@/screens/Inbox'
 import { NoteEditorRoute } from '@/screens/NoteEditor'
 import { Placeholder } from '@/screens/Placeholder'
 import { Review } from '@/screens/Review'
@@ -31,7 +32,7 @@ function Shell() {
           <Route path="/settings" element={<SettingsStub />} />
         </Route>
         <Route path="/review" element={<Review />} />
-        <Route path="/inbox" element={<Placeholder title="收集箱" />} />
+        <Route path="/inbox" element={<Inbox />} />
         <Route path="/note/new" element={<NoteEditorRoute />} />
         <Route path="/note/:id" element={<NoteEditorRoute />} />
         <Route path="/spike/audio" element={<AudioSpike />} />
