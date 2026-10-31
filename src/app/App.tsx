@@ -3,6 +3,7 @@ import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { TabBar } from '@/components/TabBar'
 import { Placeholder } from '@/screens/Placeholder'
+import { SettingsStub } from '@/screens/SettingsStub'
 import { Today } from '@/screens/Today'
 import { AudioSpike } from '@/spikes/AudioSpike'
 import { TtsSpike } from '@/spikes/TtsSpike'
@@ -24,7 +25,7 @@ export function App() {
         <Route element={<WithTabs />}>
           <Route path="/" element={<Today dict={dict} />} />
           <Route path="/cards" element={<Placeholder title="卡片" />} />
-          <Route path="/settings" element={<Placeholder title="设置" />} />
+          <Route path="/settings" element={<SettingsStub />} />
         </Route>
         <Route path="/review" element={<Placeholder title="复习" />} />
         <Route path="/inbox" element={<Placeholder title="收集箱" />} />
