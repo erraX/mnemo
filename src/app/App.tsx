@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
@@ -12,6 +13,9 @@ import { Settings } from '@/screens/Settings'
 import { Today } from '@/screens/Today'
 import { AudioSpike } from '@/spikes/AudioSpike'
 import { TtsSpike } from '@/spikes/TtsSpike'
+
+// 表格解析库只在进入导入页时加载；PWA 构建仍会预缓存这份异步 chunk。
+const Import = lazy(() => import('@/screens/Import').then((module) => ({ default: module.Import })))
 
 function WithTabs() {
   return (
@@ -36,6 +40,7 @@ function Shell() {
         </Route>
         <Route path="/review" element={<Review />} />
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/import" element={<Suspense fallback={<p role="status" className="p-4 text-muted">正在加载导入…</p>}><Import /></Suspense>} />
         <Route path="/note/new" element={<NoteEditorRoute />} />
         <Route path="/note/:id" element={<NoteEditorRoute />} />
         <Route path="/spike/audio" element={<AudioSpike />} />

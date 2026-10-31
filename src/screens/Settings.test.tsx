@@ -101,6 +101,12 @@ describe('Settings', () => {
     await waitFor(() => expect(input.disabled).toBe(false))
   })
 
+  it('links to append-only vocabulary import separately from backup restore', async () => {
+    renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
+    expect(await screen.findByRole('link', { name: /导入词库/ })).toHaveAttribute('href', '/import')
+    expect(screen.getByLabelText('从文件恢复')).toBeTruthy()
+  })
+
   it('shows about info', async () => {
     renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
     expect(await screen.findByText('ECDICT (MIT)')).toBeTruthy()

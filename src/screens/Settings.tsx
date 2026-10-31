@@ -135,6 +135,10 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
       </Group>
 
       <Group title="数据">
+        <Link to="/import" className="flex min-h-11 w-full items-center justify-between border-b border-line px-4 py-3 text-[15px]">
+          <span>导入词库</span>
+          <span className="text-xs text-muted">只追加，已有词跳过 ›</span>
+        </Link>
         <button type="button" className="flex w-full items-center justify-between border-b border-line px-4 py-3 text-[15px]" disabled={busy} onClick={() => void backup()}>
           <span>备份到文件</span>
           <span className="text-sm text-muted">{daysAgo(settings.lastBackupAt)} ›</span>
