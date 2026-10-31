@@ -146,12 +146,13 @@ describe('Cards bulk management', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(305)
     expect(screen.getAllByRole('checkbox').every((box) => (box as HTMLInputElement).checked)).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '删除单词' }))
-    const confirm = await screen.findByRole('button', { name: '确认删除 305 个单词' })
-    await waitFor(() => expect(confirm).toBeEnabled())
+    // 大批量 IndexedDB 预览也需要等待，不能沿用 findBy 默认的 1 秒上限。
+    const confirm = await screen.findByRole('button', { name: '确认删除 305 个单词' }, { timeout: 10_000 })
+    await waitFor(() => expect(confirm).toBeEnabled(), { timeout: 5000 })
     fireEvent.click(confirm)
-    await screen.findByText('已删除 305 个单词、915 张卡、0 条复习记录', {}, { timeout: 5000 })
+    await screen.findByText('已删除 305 个单词、915 张卡、0 条复习记录', {}, { timeout: 10_000 })
     expect(await db.notes.toArray()).toEqual([other])
-  }, 15_000) // 300+ 行的可访问性查询和 IndexedDB 级联删除在 CI runner 上需要更长时间。
+  }, 30_000) // 仅放宽大词库场景，不降低任何断言或放宽其他测试。
 
   it('invalidates previews when either the selection or the type changes', async () => {
     await createNote(db, input)
