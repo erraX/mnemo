@@ -28,6 +28,21 @@ describe('Review', () => {
     expect(await db.reviewLogs.count()).toBe(1)
   })
 
+  it('tapping the card flips it (and auto-plays), but the front play button does not flip', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    await screen.findByText('这个词什么意思')
+    fireEvent.click(screen.getByRole('button', { name: '播放发音' }))
+    expect(play).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('这个词什么意思')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /简单/ })).toBeNull()
+
+    fireEvent.click(screen.getByText('这个词什么意思'))
+    await screen.findByRole('button', { name: /简单/ })
+    expect(play).toHaveBeenCalledTimes(2)
+    expect(play).toHaveBeenLastCalledWith('concern')
+  })
+
   it('undo restores the card and the counter', async () => {
     await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
     renderWithRouter(<Review />, { route: '/review', path: '/review' })

@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router'
 import { db } from '@/db/db'
@@ -56,6 +56,11 @@ export function Review() {
   function onReveal() {
     setSession(reveal)
     if (settings.autoPlayOnReveal) playHeadword()
+  }
+
+  function onCardKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReveal() }
   }
 
   async function onGrade(rating: Rating) {
@@ -125,13 +130,23 @@ export function Review() {
           </div>
         </div>
 
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-4">
-          {!noteLoaded ? null : note ? (
-            session.revealed ? <CardBack note={note} onPlay={playHeadword} /> : <CardFront card={current} note={note} onPlay={playHeadword} />
-          ) : (
-            <p className="text-sm text-muted">记录不存在</p>
-          )}
-        </div>
+        {session.revealed ? (
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-4">
+            {!noteLoaded ? null : note ? <CardBack note={note} onPlay={playHeadword} /> : <p className="text-sm text-muted">记录不存在</p>}
+          </div>
+        ) : (
+          // 规格 §5.6：点卡片任意位置翻面；翻面是用户手势，自动播放留在手势内
+          <div
+            role="button"
+            aria-label="翻面"
+            tabIndex={0}
+            className="mx-auto flex w-full max-w-md flex-1 cursor-pointer flex-col justify-center px-6 py-4 outline-none"
+            onClick={() => { if (note) onReveal() }}
+            onKeyDown={onCardKeyDown}
+          >
+            {!noteLoaded ? null : note ? <CardFront card={current} note={note} onPlay={playHeadword} /> : <p className="text-sm text-muted">记录不存在</p>}
+          </div>
+        )}
 
         <div className="mx-auto w-full max-w-md px-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
           {!noteLoaded ? null : session.revealed && labels ? (

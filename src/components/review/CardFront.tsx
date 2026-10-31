@@ -8,7 +8,13 @@ function Label({ children }: { children: string }) {
 
 export function PlayButton({ onPlay, className = '' }: { onPlay: () => void; className?: string }) {
   return (
-    <button type="button" aria-label="播放发音" onClick={onPlay} className={`grid h-7 w-7 place-items-center rounded-full bg-easy-bg text-xs text-accent ${className}`}>▶</button>
+    <button
+      type="button"
+      aria-label="播放发音"
+      // 正面整卡可点翻面，播放不能冒泡成翻面
+      onClick={(e) => { e.stopPropagation(); onPlay() }}
+      className={`grid h-7 w-7 place-items-center rounded-full bg-easy-bg text-xs text-accent ${className}`}
+    >▶</button>
   )
 }
 
