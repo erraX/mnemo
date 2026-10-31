@@ -5,6 +5,7 @@ import { db } from '@/db/db'
 import { createNote, getSettings } from '@/db/repo'
 import { backupToFile } from '@/lib/backupShare'
 import { exportBackup } from '@/lib/backup'
+import * as backup from '@/lib/backup'
 import { renderWithRouter } from '@/test/render'
 import { Settings } from './Settings'
 
@@ -73,6 +74,28 @@ describe('Settings', () => {
 
     fireEvent.change(input, { target: { files: [new File(['{}'], 'x.json', { type: 'application/json' })] } })
     expect(await screen.findByText('不是 Mnemo 的备份文件')).toBeTruthy()
+  })
+
+  it('restore shows a friendly message when the import itself fails, keeps the JSON-parse message, and is disabled while busy', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    const file = backupToFile(await exportBackup(db))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.spyOn(backup, 'importBackup').mockRejectedValueOnce(new Error('DataError: Failed to execute add on IDBObjectStore'))
+    renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
+    const input = (await screen.findByLabelText('从文件恢复')) as HTMLInputElement
+    fireEvent.change(input, { target: { files: [file] } })
+    expect(await screen.findByText('恢复失败，请重试')).toBeTruthy()
+
+    fireEvent.change(input, { target: { files: [new File(['not json'], 'x.json', { type: 'application/json' })] } })
+    expect(await screen.findByText('不是有效的备份文件')).toBeTruthy()
+
+    let release: () => void = () => undefined
+    vi.spyOn(backup, 'importBackup').mockImplementationOnce(() => new Promise<void>((r) => { release = r }))
+    fireEvent.change(input, { target: { files: [file] } })
+    await waitFor(() => expect(input.disabled).toBe(true))
+    expect(screen.getByRole('button', { name: /备份到文件/ })).toBeDisabled()
+    release()
+    await waitFor(() => expect(input.disabled).toBe(false))
   })
 
   it('shows about info', async () => {

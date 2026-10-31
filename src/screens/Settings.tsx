@@ -80,7 +80,8 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
   }
 
   async function restore(file: File | undefined) {
-    if (!file) return
+    if (!file || busy) return
+    setBusy(true)
     setMsg(undefined)
     try {
       const data = await readBackupFile(file)
@@ -89,8 +90,9 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
       await importBackup(db, data)
       setMsg(`已恢复 ${data.notes.length} 条记录`)
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : '恢复失败')
+      setMsg(e instanceof Error && e.message === '不是有效的备份文件' ? e.message : '恢复失败，请重试')
     } finally {
+      setBusy(false)
       if (fileRef.current) fileRef.current.value = ''
     }
   }
@@ -140,7 +142,7 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
         <label className="flex w-full items-center justify-between px-4 py-3 text-[15px]">
           <span>从文件恢复</span>
           <span className="text-sm text-muted">›</span>
-          <input ref={fileRef} aria-label="从文件恢复" type="file" accept="application/json,.json" className="sr-only" onChange={(e) => void restore(e.target.files?.[0])} />
+          <input ref={fileRef} aria-label="从文件恢复" type="file" accept="application/json,.json" className="sr-only" disabled={busy} onChange={(e) => void restore(e.target.files?.[0])} />
         </label>
         {msg && <div className="px-4 py-2 text-xs text-muted" role="status">{msg}</div>}
         <p className="px-4 pb-3 text-xs text-muted">备份会打开系统分享面板，选「存储到文件」放进 iCloud Drive。恢复会覆盖当前全部数据。</p>

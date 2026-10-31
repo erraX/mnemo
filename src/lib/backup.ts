@@ -27,17 +27,35 @@ export async function markBackedUp(db: MnemoDB, now = Date.now()): Promise<Setti
   return updateSettings(db, { lastBackupAt: now })
 }
 
+type Shape = Record<string, 'string' | 'number' | 'array'>
+
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x)
+}
+
+function hasShape(x: unknown, shape: Shape): boolean {
+  if (!isRecord(x)) return false
+  return Object.entries(shape).every(([k, t]) => (t === 'array' ? Array.isArray(x[k]) : typeof x[k] === t))
+}
+
+// 只查读取端会直接解引用的字段；坏记录进库后会让 searchNotes / 排队白屏，而恢复是覆盖式的
+const NOTE_SHAPE: Shape = { id: 'string', headword: 'string', headwordKey: 'string', meaning: 'string', examples: 'array', tags: 'array' }
+const CARD_SHAPE: Shape = { id: 'string', noteId: 'string', due: 'number', state: 'number' }
+const LOG_SHAPE: Shape = { id: 'string', reviewedAt: 'number' }
+const DRAFT_SHAPE: Shape = { id: 'string' }
+
 export function validateBackup(x: unknown): x is BackupFile {
-  if (typeof x !== 'object' || x === null) return false
-  const o = x as Record<string, unknown>
+  if (!isRecord(x)) return false
+  const o = x
   return (
     o.app === 'mnemo' &&
     o.version === 1 &&
-    Array.isArray(o.notes) &&
-    Array.isArray(o.cards) &&
-    Array.isArray(o.reviewLogs) &&
-    Array.isArray(o.drafts) &&
-    typeof o.settings === 'object' && o.settings !== null
+    typeof o.exportedAt === 'number' &&
+    isRecord(o.settings) &&
+    Array.isArray(o.notes) && o.notes.every((n) => hasShape(n, NOTE_SHAPE)) &&
+    Array.isArray(o.cards) && o.cards.every((c) => hasShape(c, CARD_SHAPE)) &&
+    Array.isArray(o.reviewLogs) && o.reviewLogs.every((l) => hasShape(l, LOG_SHAPE)) &&
+    Array.isArray(o.drafts) && o.drafts.every((d) => hasShape(d, DRAFT_SHAPE))
   )
 }
 

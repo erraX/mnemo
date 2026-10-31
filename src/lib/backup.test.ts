@@ -50,6 +50,29 @@ describe('backup', () => {
     expect(validateBackup(null)).toBe(false)
   })
 
+  it('validateBackup checks exportedAt, settings shape and the fields each record needs', async () => {
+    const src = createTestDb()
+    const note = await createNote(src, { headword: 'concern', meaning: 'm', examples: [], tags: [], enabledTypes: ['en2zh'] }, NOW, sched)
+    const [card] = await src.cards.where('noteId').equals(note.id).toArray()
+    await gradeCard(src, card!.id, 3, NOW, sched)
+    const good = await exportBackup(src, NOW)
+    type Loose = { notes: Record<string, unknown>[]; cards: Record<string, unknown>[]; reviewLogs: Record<string, unknown>[]; drafts: unknown; settings: unknown; exportedAt: unknown }
+    const clone = (): Loose => JSON.parse(JSON.stringify(good)) as Loose
+    expect(validateBackup(clone())).toBe(true)
+
+    const noKey = clone(); delete noKey.notes[0]!.headwordKey
+    expect(validateBackup(noKey)).toBe(false)
+    expect(validateBackup({ ...clone(), settings: [] })).toBe(false)
+    expect(validateBackup({ ...clone(), exportedAt: 'x' })).toBe(false)
+    const badTags = clone(); badTags.notes[0]!.tags = 'x'
+    expect(validateBackup(badTags)).toBe(false)
+    const badCard = clone(); badCard.cards[0]!.due = '2026'
+    expect(validateBackup(badCard)).toBe(false)
+    const badLog = clone(); delete badLog.reviewLogs[0]!.reviewedAt
+    expect(validateBackup(badLog)).toBe(false)
+    expect(validateBackup({ ...clone(), drafts: [{ raw: 'x' }] })).toBe(false)
+  })
+
   it('names files by local time', () => {
     expect(backupFilename(NOW)).toBe('mnemo-backup-20261030-0905.json')
   })
