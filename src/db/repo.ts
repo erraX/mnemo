@@ -76,7 +76,13 @@ export async function updateNote(
       await db.reviewLogs.where('cardId').anyOf(doomed).delete()
       await db.cards.bulkDelete(doomed)
     }
-    if (toCreate.length) await db.cards.bulkAdd(toCreate.map((t) => sched.newCard(id, t, now)))
+    if (toCreate.length) {
+      // 该记录今天已经出过一张（有兄弟被埋或今日有打分日志）时，新增的卡也埋到明天，否则同一记录今天会出第二张
+      const shownToday = cards.some((c) => c.buriedUntil !== undefined && c.buriedUntil > now)
+        || (await db.reviewLogs.where('noteId').equals(id).filter((l) => l.reviewedAt >= learningDayStart(now)).count()) > 0
+      const bury = shownToday ? { buriedUntil: nextLearningDayStart(now) } : {}
+      await db.cards.bulkAdd(toCreate.map((t) => ({ ...sched.newCard(id, t, now), ...bury })))
+    }
 
     const note: Note = {
       ...existing,

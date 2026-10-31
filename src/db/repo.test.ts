@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTestDb } from '@/test/db'
+import { nextLearningDayStart } from '@/lib/day'
 import { createScheduler } from '@/lib/scheduler'
 import {
   addExtraNewToday, createNote, deleteNote, findDuplicate, getSettings, getTodayCounts, getTodayQueue,
@@ -49,6 +50,22 @@ describe('notes and cards', () => {
     expect(await db.cards.where('noteId').equals(note.id).count()).toBe(2)
     expect(await db.reviewLogs.where('cardId').equals(zh.id).count()).toBe(0)
     expect(r.note.updatedAt).toBe(NOW + MIN)
+  })
+
+  it('updateNote buries cards it adds when the note was already shown today', async () => {
+    const db = createTestDb()
+    const note = await createNote(db, { ...input, enabledTypes: ['en2zh'] }, NOW, sched)
+    const [en] = await getTodayQueue(db, NOW)
+    await gradeCard(db, en!.id, 4, NOW, sched)
+    expect(await getTodayQueue(db, NOW + MIN)).toHaveLength(0)
+
+    const r = await updateNote(db, note.id, { ...input, enabledTypes: ['zh2en', 'en2zh'] }, NOW + MIN, sched)
+    expect(r.created).toEqual(['zh2en'])
+    const zh = (await db.cards.where('noteId').equals(note.id).toArray()).find((c) => c.type === 'zh2en')!
+    expect(zh.buriedUntil).toBe(nextLearningDayStart(NOW))
+    expect(await getTodayQueue(db, NOW + 2 * MIN)).toHaveLength(0)
+    const tomorrow = await getTodayQueue(db, local(2026, 10, 31, 9))
+    expect(tomorrow.map((c) => c.id)).toEqual([zh.id])
   })
 
   it('updateNote refuses to delete card types without confirmation and writes nothing', async () => {
