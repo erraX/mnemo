@@ -1,9 +1,10 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { db } from '@/db/db'
 import { createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, updateNote } from '@/db/repo'
 import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type Note } from '@/domain/types'
+import { tokenize } from '@/lib/cloze'
 import { lookupWord } from '@/lib/dict'
 import { canSave, formAvailability, initialForm, reduceForm, saveLabel, toNoteInput } from '@/lib/noteForm'
 import { useAudio } from '@/app/useAudio'
@@ -25,6 +26,8 @@ export function NoteEditorRoute() {
 
 export function NoteEditor() {
   const { id } = useParams<{ id: string }>()
+  const [params] = useSearchParams()
+  const draftId = params.get('draft') ?? undefined
   const location = useLocation()
   const navigate = useNavigate()
   const audio = useAudio()
@@ -32,8 +35,10 @@ export function NoteEditor() {
 
   const settings = useLiveQuery(() => getSettings(db), [])
   const note = useLiveQuery(() => (id ? db.notes.get(id) : undefined), [id])
+  const draft = useLiveQuery(() => (draftId ? db.drafts.get(draftId) : undefined), [draftId])
   const [form, dispatch] = useReducer(reduceForm, undefined, () => initialForm(DEFAULT_SETTINGS.lastEnabledTypes))
   const [loadedFor, setLoadedFor] = useState<string | undefined>(undefined)
+  const [prefilledFor, setPrefilledFor] = useState<string | undefined>(undefined)
   const [duplicate, setDuplicate] = useState<Note | undefined>(undefined)
   const [saving, setSaving] = useState(false)
   // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
@@ -41,19 +46,27 @@ export function NoteEditor() {
   const lookupEnabled = mode === 'new' || headwordDirty
   const headwordRef = useRef<HTMLInputElement>(null)
 
-  // 初始化（各只做一次）：新建等 settings 到位后只接管上次勾选的卡型，不覆盖用户在此之前已输入的内容；编辑等记录到位后用记录内容
+  // 初始化（各只做一次）：新建等 settings 到位后只接管上次勾选的卡型，不覆盖用户在此之前已输入的内容；
+  // 带 ?draft= 时再用草稿预填（独立守卫，先 types 后 draft）；编辑等记录到位后用记录内容
   useEffect(() => {
     if (!settings) return
-    if (mode === 'new' && loadedFor === undefined) {
-      dispatch({ type: 'reset', state: { ...form, types: initialForm(settings.lastEnabledTypes).types } })
-      setLoadedFor('new')
-      headwordRef.current?.focus()
+    if (mode === 'new') {
+      if (loadedFor === undefined) {
+        dispatch({ type: 'reset', state: { ...form, types: initialForm(settings.lastEnabledTypes).types } })
+        setLoadedFor('new')
+        headwordRef.current?.focus()
+      }
+      if (draft && prefilledFor !== draft.id) {
+        dispatch({ type: 'prefillDraft', draft })
+        setPrefilledFor(draft.id)
+        setHeadwordDirty(true)
+      }
     }
     if (mode === 'edit' && note && loadedFor !== note.id) {
       dispatch({ type: 'reset', state: initialForm(settings.lastEnabledTypes, note) })
       setLoadedFor(note.id)
     }
-  }, [mode, note, settings, loadedFor, form])
+  }, [mode, note, draft, settings, loadedFor, prefilledFor, form])
 
   // 词典查询与查重（防抖）
   useEffect(() => {
@@ -77,7 +90,7 @@ export function NoteEditor() {
     try {
       const input = toNoteInput(form)
       if (mode === 'new') {
-        await createNote(db, input)
+        await createNote(db, input, Date.now(), undefined, { draftId })
       } else if (id) {
         const plan = await planNoteUpdate(db, id, input)
         if (plan.toDelete.length > 0) {
@@ -123,6 +136,20 @@ export function NoteEditor() {
             autoCorrect="off"
             onChange={(e) => { setHeadwordDirty(true); dispatch({ type: 'headword', value: e.target.value }) }}
           />
+          {form.pendingHeadwordPick && form.examples[0] && (
+            <div className="mt-2 rounded-(--radius-field) bg-bg p-2">
+              <div className="mb-1 text-[10px] text-muted">点一个词作为要记的词</div>
+              <p className="leading-8">
+                {tokenize(form.examples[0].text).map((t, i) =>
+                  t.isWord ? (
+                    <button key={i} type="button" aria-label={`选 ${t.text}`} className="rounded-sm px-0.5 underline decoration-dotted underline-offset-4" onClick={() => { setHeadwordDirty(true); dispatch({ type: 'pickHeadword', word: t.text }) }}>
+                      {t.text}
+                    </button>
+                  ) : <span key={i}>{t.text}</span>,
+                )}
+              </p>
+            </div>
+          )}
           {form.dict.lemma && (
             <button type="button" className="mt-1 text-sm text-accent" onClick={() => dispatch({ type: 'acceptLemma' })}>
               改为原形 {form.dict.lemma}

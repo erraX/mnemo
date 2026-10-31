@@ -158,3 +158,26 @@ describe('NoteEditor (edit)', () => {
     await waitFor(async () => expect(await db.notes.count()).toBe(0))
   })
 })
+
+describe('NoteEditor (draft prefill)', () => {
+  it('prefills a headword draft and deletes it on save', async () => {
+    await db.drafts.add({ id: 'd1', raw: 'concern', kind: 'headword', createdAt: 1 })
+    renderWithRouter(<NoteEditor />, { route: '/note/new?draft=d1', path: '/note/new' })
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern'))
+    await waitFor(() => expect(screen.getByText('已从词典补全')).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /保存 · 生成/ }))
+    await waitFor(async () => expect(await db.notes.count()).toBe(1))
+    expect(await db.drafts.count()).toBe(0)
+  })
+
+  it('a sentence draft asks to pick the headword from its words', async () => {
+    await db.drafts.add({ id: 'd2', raw: 'I have some concerns about it.', kind: 'sentence', createdAt: 1 })
+    renderWithRouter(<NoteEditor />, { route: '/note/new?draft=d2', path: '/note/new' })
+    expect(await screen.findByText('点一个词作为要记的词')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '选 concerns' }))
+    expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concerns')
+    expect(screen.queryByText('点一个词作为要记的词')).toBeNull()
+    await waitFor(() => expect(screen.getByRole('button', { name: '改为原形 concern' })).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'concerns' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})

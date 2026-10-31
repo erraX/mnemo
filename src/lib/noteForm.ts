@@ -1,5 +1,5 @@
 import type { NoteInput } from '@/db/repo'
-import { CARD_TYPES, type Blank, type CardType, type DictEntry, type Note } from '@/domain/types'
+import { CARD_TYPES, type Blank, type CardType, type DictEntry, type Draft, type Note } from '@/domain/types'
 import { availableTypes, filterEnabled } from './cardTypes'
 import { detectBlanks, tokenize } from './cloze'
 
@@ -21,6 +21,8 @@ export interface NoteFormState {
   types: CardType[]
   touched: { phonetic: boolean; meaning: boolean }
   dict: { status: 'idle' | 'hit' | 'miss'; forms: string[]; lemma?: string }
+  /** 句子草稿预填后，等用户从句中点一个词作为词头 */
+  pendingHeadwordPick: boolean
 }
 
 export type NoteFormAction =
@@ -37,6 +39,8 @@ export type NoteFormAction =
   | { type: 'exampleSource'; id: string; value: string }
   | { type: 'exampleBlanks'; id: string; blanks: Blank[] }
   | { type: 'toggleType'; cardType: CardType }
+  | { type: 'prefillDraft'; draft: Draft }
+  | { type: 'pickHeadword'; word: string }
 
 const canonical = (types: CardType[]) => CARD_TYPES.filter((t) => types.includes(t))
 
@@ -45,6 +49,7 @@ export function initialForm(defaults: CardType[], note?: Note): NoteFormState {
     return {
       headword: '', phonetic: '', meaning: '', examples: [], tags: '',
       types: canonical(defaults), touched: { phonetic: false, meaning: false }, dict: { status: 'idle', forms: [] },
+      pendingHeadwordPick: false,
     }
   }
   return {
@@ -56,6 +61,7 @@ export function initialForm(defaults: CardType[], note?: Note): NoteFormState {
     types: canonical(note.enabledTypes),
     touched: { phonetic: true, meaning: true },
     dict: { status: 'idle', forms: [] },
+    pendingHeadwordPick: false,
   }
 }
 
@@ -138,6 +144,15 @@ export function reduceForm(s: NoteFormState, a: NoteFormAction): NoteFormState {
       return { ...s, examples: s.examples.map((e) => (e.id === a.id ? { ...e, blanks: a.blanks, manual: true } : e)) }
     case 'toggleType':
       return { ...s, types: canonical(s.types.includes(a.cardType) ? s.types.filter((t) => t !== a.cardType) : [...s.types, a.cardType]) }
+    case 'prefillDraft':
+      if (a.draft.kind === 'headword') return reduceForm(s, { type: 'headword', value: a.draft.raw })
+      return {
+        ...s,
+        pendingHeadwordPick: true,
+        examples: [...s.examples, { id: crypto.randomUUID(), text: a.draft.raw, source: '', blanks: [], manual: false }],
+      }
+    case 'pickHeadword':
+      return { ...reduceForm(s, { type: 'headword', value: a.word }), pendingHeadwordPick: false }
   }
 }
 

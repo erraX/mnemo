@@ -145,3 +145,21 @@ describe('types, save label, note input', () => {
     expect(s.examples[0]).toMatchObject({ text: 'I have concerns.', source: 's', manual: true })
   })
 })
+
+describe('drafts', () => {
+  it('prefillDraft(headword) sets the headword', () => {
+    const s = reduceForm(initialForm([...ALL]), { type: 'prefillDraft', draft: { id: 'd', raw: 'concern', kind: 'headword', createdAt: 1 } })
+    expect(s.headword).toBe('concern')
+    expect(s.pendingHeadwordPick).toBe(false)
+  })
+  it('prefillDraft(sentence) adds an example and waits for a headword pick; pickHeadword sets it and detects the blank', () => {
+    const s1 = reduceForm(initialForm([...ALL]), { type: 'prefillDraft', draft: { id: 'd', raw: 'I have some concerns about it.', kind: 'sentence', createdAt: 1 } })
+    expect(s1.examples.map((e) => e.text)).toEqual(['I have some concerns about it.'])
+    expect(s1.pendingHeadwordPick).toBe(true)
+    expect(s1.headword).toBe('')
+    const s2 = reduceForm(s1, { type: 'pickHeadword', word: 'concerns' })
+    expect(s2.headword).toBe('concerns')
+    expect(s2.pendingHeadwordPick).toBe(false)
+    expect(s2.examples[0]!.blanks).toEqual([{ start: 12, end: 20 }])
+  })
+})
