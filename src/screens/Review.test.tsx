@@ -72,7 +72,8 @@ describe('Review', () => {
     fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
     // 第 20 张之后落到歇脚页，说明回来时没有把节奏清零
     expect(await screen.findByRole('button', { name: '今天到这' })).toBeTruthy()
-    expect(sessionStorage.getItem(SESSION_MEMORY_KEY)).toContain('"sinceBreather":0')
+    // 记忆写在 effect 里，晚于渲染一帧：这里必须等，不能直接读
+    await waitFor(() => expect(sessionStorage.getItem(SESSION_MEMORY_KEY)).toContain('"sinceBreather":0'))
   })
 
   it('undo restores the card and the counter', async () => {

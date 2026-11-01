@@ -41,7 +41,8 @@ const input = {
 async function openBatch() {
   renderWithRouter(<Cards />, { route: '/cards', path: '/cards' })
   await screen.findAllByRole('link', { name: /concern/ })
-  fireEvent.click(screen.getByRole('button', { name: '批量管理' }))
+  fireEvent.click(await screen.findByRole('button', { name: '批量管理' }))
+  await screen.findByRole('region', { name: '批量选择' })
 }
 
 function selectAll() {
@@ -153,9 +154,8 @@ describe('Cards bulk management', () => {
     // 等待真实数据库操作，避免在 300+ 行上反复做昂贵的角色查询，饿死 fake-indexeddb 的异步任务。
     const preview = vi.spyOn(bulk, 'planBulkNotes')
     await act(async () => {
-      fireEvent.click(actions.getByRole('button', { name: /^删除 \d+ 条记录$/
-  }))
-      expect(preview).toHaveBeenCalledTimes(1)
+      fireEvent.click(actions.getByRole('button', { name: /^删除 \d+ 条记录$/ }))
+      await waitFor(() => expect(preview).toHaveBeenCalledTimes(1))
       await preview.mock.results[0]!.value
     })
     const confirm = actions.getByRole('button', { name: '确认删除 305 条记录' })
@@ -163,7 +163,7 @@ describe('Cards bulk management', () => {
     const apply = vi.spyOn(bulk, 'applyBulkNotes')
     await act(async () => {
       fireEvent.click(confirm)
-      expect(apply).toHaveBeenCalledTimes(1)
+      await waitFor(() => expect(apply).toHaveBeenCalledTimes(1))
       await apply.mock.results[0]!.value
     })
     expect(screen.getByText('已删除 305 条记录、915 张卡、0 条复习记录')).toBeInTheDocument()

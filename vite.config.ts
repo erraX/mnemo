@@ -62,5 +62,8 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     setupFiles: ['./src/test/setup.ts'],
+    // CI 的 2 核 runner 单核性能比本机慢 2–3 倍：断言不变，只把单测与 hook 的超时上限放宽
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
   },
 })
