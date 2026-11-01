@@ -24,7 +24,6 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     </div>
   )
 }
-
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
@@ -121,17 +120,18 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
 
       <Group title="学习">
         <Row label="每日新卡上限">
-          <button type="button" aria-label="减少每日新卡" className="grid h-11 w-11 place-items-center rounded-full bg-bg text-base text-ink" onClick={() => setNew(settings.newCardsPerDay - 5)}>−</button>
+          <button type="button" aria-label="减少每日新卡" className="grid h-11 w-11 place-items-center rounded-full border border-line bg-bg text-lg font-semibold text-ink" onClick={() => setNew(settings.newCardsPerDay - 5)}>−</button>
           <span className="w-8 text-center text-ink">{settings.newCardsPerDay}</span>
-          <button type="button" aria-label="增加每日新卡" className="grid h-11 w-11 place-items-center rounded-full bg-bg text-base text-ink" onClick={() => setNew(settings.newCardsPerDay + 5)}>+</button>
+          <button type="button" aria-label="增加每日新卡" className="grid h-11 w-11 place-items-center rounded-full border border-line bg-bg text-lg font-semibold text-ink" onClick={() => setNew(settings.newCardsPerDay + 5)}>+</button>
         </Row>
       </Group>
 
       <Group title="发音">
         <Row label="口音">
-          <div className="flex rounded-full bg-bg">
+          <div className="flex rounded-full border border-line bg-bg p-0.5">
             {(['us', 'uk'] as const).map((a) => (
-              <button key={a} type="button" aria-pressed={settings.accent === a} className={`min-h-11 rounded-full px-3 text-sm ${settings.accent === a ? 'bg-panel font-semibold text-ink' : 'text-muted'}`} onClick={() => void setAccent(a)}>
+              // 选中态用墨色反白（与 chip 同一套语言）：白底压浅灰只有 1.04:1，等于没有状态
+              <button key={a} type="button" aria-pressed={settings.accent === a} className={`min-h-11 rounded-full px-3 text-sm ${settings.accent === a ? 'bg-ink font-semibold text-bg' : 'text-muted'}`} onClick={() => void setAccent(a)}>
                 {a === 'us' ? '美音' : '英音'}
               </button>
             ))}
@@ -146,8 +146,8 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
             className="grid h-11 w-12 place-items-center"
             onClick={() => void updateSettings(db, { autoPlayOnReveal: !settings.autoPlayOnReveal })}
           >
-            <span className={`relative block h-6 w-10 rounded-full transition-colors ${settings.autoPlayOnReveal ? 'bg-good-fg' : 'bg-line'}`}>
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-panel transition-all ${settings.autoPlayOnReveal ? 'left-[18px]' : 'left-0.5'}`} />
+            <span className={`relative block h-6 w-10 rounded-full transition-colors ${settings.autoPlayOnReveal ? 'bg-good-fg' : 'bg-muted'}`}>
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-panel shadow-sm transition-all ${settings.autoPlayOnReveal ? 'left-[18px]' : 'left-0.5'}`} />
             </span>
           </button>
         </Row>

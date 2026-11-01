@@ -162,6 +162,19 @@ describe('Review foreground re-query', () => {
     document.dispatchEvent(new Event('visibilitychange'))
   }
 
+  it('explains the counter growing when a foreground requery brings cards back', async () => {
+    await createNote(db, { headword: 'a', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    await screen.findByRole('button', { name: '看答案' })
+    expect(screen.getByText('剩余 1')).toBeTruthy()
+    const queue = await repo.getTodayQueue(db)
+    // 回到前台时暂缓的卡重新进队：剩余数变大，必须解释一句
+    vi.spyOn(repo, 'getTodayQueue').mockResolvedValue([...queue, ...queue])
+    becomeVisible()
+    expect(await screen.findByText('打错的卡回到了今天的队里')).toBeTruthy()
+    expect(screen.getByText('剩余 2')).toBeTruthy()
+  })
+
   it('keeps the breather page when the app returns to the foreground', async () => {
     await db.settings.put({ id: 'settings', newCardsPerDay: 30, accent: 'us', autoPlayOnReveal: false, lastEnabledTypes: ['en2zh'] })
     for (let i = 0; i < 21; i += 1) {
@@ -178,6 +191,21 @@ describe('Review foreground re-query', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(queueSpy).not.toHaveBeenCalled()
     expect(screen.getByText('已复习 20 张')).toBeTruthy()
+  })
+})
+
+describe('Review counter honesty', () => {
+  it('explains why the remaining count does not go down when the card stays queued', async () => {
+    await createNote(db, { headword: 'a', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] }, Date.now() - 2000)
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    expect(screen.getByText('剩余 1')).toBeTruthy()
+    // 模拟“打错的卡回到队里”：剩余数不会降，必须在同一步把原因说出来
+    const queue = await repo.getTodayQueue(db)
+    vi.spyOn(repo, 'getTodayQueue').mockResolvedValue(queue)
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    expect(await screen.findByText('打错的卡会回到今天的队里')).toBeTruthy()
+    expect(screen.getByText('剩余 1')).toBeTruthy()
   })
 })
 

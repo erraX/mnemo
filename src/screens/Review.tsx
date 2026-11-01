@@ -35,7 +35,9 @@ export function Review() {
     return memory ? { ...base, sinceBreather: memory.sinceBreather, stats: { ...base.stats, startedAt: memory.startedAt } } : base
   })
   const [busy, setBusy] = useState(false)
-  const [toast, setToast] = useState<string | undefined>(undefined)
+  const [toast, setToast] = useState<{ text: string; ms: number } | undefined>(undefined)
+  /** 瞬时提示：默认 1.5s；需要读完的句子（解释计数、无新卡）多给一点 */
+  const say = (text: string, ms = 1500) => setToast({ text, ms })
   const [loadError, setLoadError] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   // 切走 / 锁屏的时间不算进"学习分钟"，否则开着标签页吃个午饭就会报 43 分钟
@@ -80,20 +82,29 @@ export function Review() {
   sessionRef.current = session
   const busyRef = useRef(busy)
   busyRef.current = busy
+  // say 每次 render 都是新函数，放进依赖会让上面的 effect 每帧重跑；用 ref 取最新一份
+  const sayRef = useRef<(text: string, ms?: number) => void>(() => undefined)
+  sayRef.current = (text, ms) => setToast({ text, ms: ms ?? 1500 })
   useEffect(() => {
     if (tick === 0) return
     const s = sessionRef.current
     if (s.phase === 'loading' || s.phase === 'breather' || s.revealed || busyRef.current) return
     let cancelled = false
     requery()
-      .then((q) => { if (!cancelled) setSession((cur) => (cur.revealed ? cur : withQueue(cur, q))) })
+      .then((q) => {
+        if (cancelled) return
+        // 回到前台重新查队列时，暂缓中的卡（刚答错的、学习步刚到的）会重新进队，剩余数会变大。
+        // 那不是 bug，但必须当时就说一句。
+        if (q.length > s.queue.length) sayRef.current('打错的卡回到了今天的队里', 2600)
+        setSession((cur) => (cur.revealed ? cur : withQueue(cur, q)))
+      })
       .catch(() => undefined)
     return () => { cancelled = true }
   }, [tick, requery])
 
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => setToast(undefined), 1500)
+    const t = setTimeout(() => setToast(undefined), toast.ms)
     return () => clearTimeout(t)
   }, [toast])
 
@@ -116,6 +127,7 @@ export function Review() {
 
   async function onGrade(rating: Rating) {
     if (!current || busy) return
+    const before = session.queue.length
     setBusy(true)
     try {
       let wasNew: boolean
@@ -123,16 +135,19 @@ export function Review() {
         const { log } = await gradeCard(db, current.id, rating)
         wasNew = log.state === 0
       } catch {
-        setToast('操作失败，请重试')
+        say('操作失败，请重试')
         return
       }
       // 打分已落库；重查队列失败时本地出队，避免同一张被重复打分
       try {
         const queue = await requery()
         setSession((s) => afterGrade(s, { wasNew, queue }))
+        // 剩余数不会因为“答过一张”就一定变小：打错的卡会回到今天的队里，
+        // 所以它可能持平甚至回涨。在那一步把原因说出来，否则第一反应是“是不是坏了”。
+        if (queue.length >= before) say('打错的卡会回到今天的队里', 2600)
       } catch {
         setSession((s) => afterGrade(s, { wasNew, queue: s.queue.slice(1) }))
-        setToast('已记录，刷新队列失败')
+        say('已记录，刷新队列失败')
       }
     } finally {
       setBusy(false)
@@ -146,9 +161,9 @@ export function Review() {
       const restored = await undoLastReview(db)
       const queue = await requery()
       setSession((s) => afterUndo(s, { wasNew: restored?.state === 0, queue, restoredId: restored?.id }))
-      setToast('已撤销')
+      say('已撤销')
     } catch {
-      setToast('操作失败，请重试')
+      say('操作失败，请重试')
     } finally {
       setBusy(false)
     }
@@ -161,7 +176,7 @@ export function Review() {
       await addExtraNewToday(db, 10)
       const queue = await requery()
       setSession((s) => ({ ...withQueue(s, queue), sinceBreather: 0 }))
-      if (queue.length === 0) setToast('没有更多新卡了')
+      if (queue.length === 0) say('没有更多新卡了')
     } finally {
       setBusy(false)
     }
@@ -260,7 +275,7 @@ export function Review() {
   return (
     <>
       {body}
-      {toast && <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-44 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
+      {toast && <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-44 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast.text}</span></div>}
     </>
   )
 }

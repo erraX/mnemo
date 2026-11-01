@@ -61,6 +61,8 @@ export function NoteEditor() {
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [pendingTypeDelete, setPendingTypeDelete] = useState<{ types: CardType[]; cards: number; logs: number } | undefined>(undefined)
   const [pendingDelete, setPendingDelete] = useState<{ cards: number; logs: number } | undefined>(undefined)
+  /** 删例句也要先问一句：它是用户抄进来的原文，连同挖空一起没了就找不回来 */
+  const [pendingExampleDelete, setPendingExampleDelete] = useState<{ id: string; index: number; text: string } | undefined>(undefined)
   // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
   const [headwordDirty, setHeadwordDirty] = useState(false)
   // 例句视图：同一时刻只渲染一层——要么 textarea，要么可点词的句子
@@ -262,7 +264,7 @@ export function NoteEditor() {
                       {carving ? '改原句' : '点词挖空'}
                     </button>
                   )}
-                  <button type="button" aria-label={`删除例句 ${i + 1}`} className="min-h-6 text-accent-ink" onClick={() => dispatch({ type: 'removeExample', id: ex.id })}>删除</button>
+                  <button type="button" aria-label={`删除例句 ${i + 1}`} className="min-h-6 text-accent-ink" onClick={() => setPendingExampleDelete({ id: ex.id, index: i + 1, text: ex.text })}>删除</button>
                 </>
               }
             >
@@ -320,6 +322,18 @@ export function NoteEditor() {
           <Button variant="ghost" className="mt-4 text-again-fg" onClick={() => void requestRemove()}>删除这条记录</Button>
         )}
       </div>
+
+      {pendingExampleDelete && (
+        <ConfirmSheet
+          title={`删除例句 ${pendingExampleDelete.index}`}
+          lines={[pendingExampleDelete.text.trim() || '（这句还是空的）']}
+          message="这句例句和它上面的挖空会一起删掉；保存之后就不能撤销。"
+          safeLabel="保留"
+          dangerLabel="删除例句"
+          onSafe={() => setPendingExampleDelete(undefined)}
+          onDanger={() => { dispatch({ type: 'removeExample', id: pendingExampleDelete.id }); setPendingExampleDelete(undefined) }}
+        />
+      )}
 
       {confirmLeave && (
         <ConfirmSheet

@@ -18,26 +18,33 @@ function withTarget(text: string, target: string | undefined): ReactNode {
 export function ClozeText({
   text, blanks, mode, target, className = '',
 }: { text: string; blanks: Blank[]; mode: 'blank' | 'highlight'; target?: string; className?: string }) {
+  let ordinal = 0
   return (
     <span className={className}>
-      {segments(text, blanks).map((seg, i) =>
-        !seg.blank ? (
-          <span key={i}>{mode === 'highlight' ? withTarget(seg.text, target) : seg.text}</span>
-        ) : mode === 'highlight' ? (
-          <mark key={i} className="rounded-full bg-cloze px-1 text-ink">{seg.text}</mark>
-        ) : (
+      {segments(text, blanks).map((seg, i) => {
+        if (!seg.blank) {
+          return <span key={i}>{mode === 'highlight' ? withTarget(seg.text, target) : seg.text}</span>
+        }
+        if (mode === 'highlight') {
+          return <mark key={i} className="rounded-full bg-cloze px-1 text-ink">{seg.text}</mark>
+        }
+        ordinal += 1
+        // 读屏不能只听到「空格」：要说第几个、总共几个、几个字母，才算把题目读出来了
+        const letters = seg.text.replace(/[^A-Za-z\u00C0-\u024F]/g, '').length
+        const position = blanks.length > 1 ? `第 ${ordinal} 个空，共 ${blanks.length} 个` : '一个空'
+        return (
           <span
             key={i}
             data-blank
             role="img"
-            aria-label="空格"
+            aria-label={`${position}，${letters} 个字母`}
             className="mx-0.5 inline-block border-b-2 border-accent align-baseline"
             style={{ minWidth: `${Math.max(3, seg.text.length * 0.6)}em` }}
           >
             &nbsp;
           </span>
-        ),
-      )}
+        )
+      })}
     </span>
   )
 }

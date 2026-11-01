@@ -251,6 +251,19 @@ describe('NoteEditor (polish)', () => {
     expect(screen.getByText(/例句挖空：先给一条例句并挖一个空/)).toBeTruthy()
     expect(screen.getByText(/英 → 中：先填写单词或短语/)).toBeTruthy()
   })
+  it('asks before deleting an example sentence', async () => {
+    const note = await createNote(db, {
+      headword: 'concern', meaning: 'x', tags: [], enabledTypes: ['en2zh'],
+      examples: [{ text: 'I have some concerns.', blanks: [] }],
+    })
+    renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
+    fireEvent.click(await screen.findByRole('button', { name: '删除例句 1' }))
+    expect(await screen.findByRole('alertdialog')).toBeTruthy()
+    expect((screen.getByLabelText('例句 1') as HTMLTextAreaElement).value).toBe('I have some concerns.')
+    fireEvent.click(screen.getByRole('button', { name: '删除例句' }))
+    expect(screen.queryByLabelText('例句 1')).toBeNull()
+  })
+
   it('renders one layer per example: the carved sentence by default, the textarea on demand', async () => {
     const note = await createNote(db, {
       headword: 'concern', meaning: 'n. 担忧', tags: [], enabledTypes: ['en2zh'],
