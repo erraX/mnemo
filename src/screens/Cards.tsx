@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { db } from '@/db/db'
 import { searchNotes } from '@/db/repo'
 import type { BulkAction, BulkSummary } from '@/db/bulkNotes'
-import { CARD_TYPES, CARD_TYPE_LABEL, type Card } from '@/domain/types'
+import { CARD_TYPES, type Card } from '@/domain/types'
 import { noteDueSummary } from '@/lib/format'
 import { useVisibilityTick } from '@/app/useVisibilityTick'
 import { BulkNoteActions } from '@/components/BulkNoteActions'
@@ -80,12 +80,12 @@ export function Cards() {
   function complete(summary: BulkSummary, action: BulkAction) {
     setSelected(new Set())
     setResult(action.kind === 'delete'
-      ? `已删除 ${summary.notes} 个单词、${summary.deletedCards} 张卡、${summary.deletedLogs} 条复习记录`
-      : `已处理 ${summary.notes} 个单词：新增 ${summary.createdCards} 张卡，删除 ${summary.deletedCards} 张卡、${summary.deletedLogs} 条复习记录；跳过 ${summary.skippedCards} 张不满足条件的卡`)
+      ? `已删除 ${summary.notes} 条记录、${summary.deletedCards} 张卡、${summary.deletedLogs} 条复习记录`
+      : `已处理 ${summary.notes} 条记录：新增 ${summary.createdCards} 张卡，删除 ${summary.deletedCards} 张卡、${summary.deletedLogs} 条复习记录；跳过 ${summary.skippedCards} 张不满足条件的卡`)
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-3 px-4 pb-28" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
+    <div className={`mx-auto flex min-h-dvh max-w-md flex-col gap-3 px-4 ${batch ? 'pb-44' : 'pb-28'}`} style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <header className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-[30px] font-bold leading-tight tracking-tight">卡片</h1>
@@ -99,7 +99,7 @@ export function Cards() {
         aria-label="搜索"
         type="search"
         placeholder="搜索单词、释义、例句"
-        className="rounded-[10px] bg-panel px-3 py-2 text-base outline-none placeholder:text-muted"
+        className="rounded-[10px] bg-panel px-3 py-2 text-base placeholder:text-muted"
         value={query}
         disabled={busy}
         onChange={(e) => { setQuery(e.target.value); setVisibleLimit(PAGE_SIZE); clearSelection() }}
@@ -108,8 +108,8 @@ export function Cards() {
         <>
           <section aria-label="批量选择" className="sticky z-10 rounded-(--radius-card) border-b border-line bg-panel px-3 pt-3 pb-2" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold" role="status">已选 {selected.size} 个单词</p>
-              <button type="button" className="min-h-11 px-1 text-sm text-accent disabled:opacity-40" disabled={locked || selected.size === 0} onClick={clearSelection}>清除选择</button>
+              <p className="text-sm font-semibold" role="status">已选 {selected.size} 条记录</p>
+              <button type="button" className="min-h-11 px-1 text-sm text-accent-ink disabled:opacity-40" disabled={locked || selected.size === 0} onClick={clearSelection}>清除选择</button>
             </div>
             <div className="flex flex-wrap items-center gap-x-3">
               <Button variant="secondary" disabled={locked || !notes?.length} onClick={() => {
@@ -119,7 +119,7 @@ export function Cards() {
               }}>全选搜索结果{!searchPending && notes ? `（${notes.length}）` : ''}</Button>
               <button type="button" className="min-h-11 text-xs text-muted underline underline-offset-4 disabled:opacity-40" disabled={locked || totals.notes === 0} onClick={() => void selectLibrary()}>选择整个词库（{totals.notes}）</button>
             </div>
-            <p className="text-xs text-muted">全选包含尚未展示的单词；更改搜索会清除选择。</p>
+            <p className="text-xs text-muted">全选包含尚未展示的记录；更改搜索会清除选择。</p>
           </section>
           {selected.size > 0 && (
             <BulkNoteActions key={selectedIds.join(',')} noteIds={selectedIds} disabled={locked} onBusyChange={changeBusy} onComplete={complete} />
@@ -132,27 +132,25 @@ export function Cards() {
         <p className="py-10 text-center text-sm text-muted">{debounced ? '没有匹配的记录' : '还没有记录'}</p>
       ) : (
         <>
-          <p className="text-xs text-muted">匹配 {notes?.length ?? 0} 个单词 · 已展示 {visible.length} 个</p>
+          <p className="text-xs text-muted">匹配 {notes?.length ?? 0} 条记录 · 已展示 {visible.length} 条</p>
           <ul className="overflow-hidden rounded-(--radius-card) bg-panel">
             {visible.map((note) => {
               const own = byNote.get(note.id) ?? []
               const enabled = new Set(own.map((card) => card.type))
               const due = noteDueSummary(own, now)
+              // 卡型在默认（三种全开）时是噪声：只在真的缺卡型时补一句
+              const missingTypes = CARD_TYPES.filter((type) => !enabled.has(type))
               const content = (
-                <>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-base font-semibold">{note.headword}</div>
-                    <div className="truncate text-xs text-muted">{note.meaning.split('\n')[0]}</div>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="min-w-0 truncate text-base font-semibold">{note.headword}</div>
+                    <span className={`shrink-0 text-[11px] ${due === '新' ? 'text-accent-ink' : 'text-muted'}`}>{due}</span>
                   </div>
-                  <div className="shrink-0 text-right text-[11px] text-muted">
-                    <div className="mb-1 flex justify-end gap-1">
-                      {CARD_TYPES.map((type) => (
-                        <span key={type} title={CARD_TYPE_LABEL[type]} className={`rounded-full px-1.5 text-[10px] ${enabled.has(type) ? 'bg-easy-bg text-accent' : 'bg-line text-muted'}`}>{SHORT[type]}</span>
-                      ))}
-                    </div>
-                    <span className={due === '新' ? 'text-accent' : ''}>{due}</span>
-                  </div>
-                </>
+                  <div className="truncate text-xs text-muted">{note.meaning.split('\n')[0]}</div>
+                  {missingTypes.length > 0 && (
+                    <div className="text-[11px] text-muted">缺 {missingTypes.map((type) => SHORT[type]).join(' · ')}</div>
+                  )}
+                </div>
               )
               return (
                 <li key={note.id} className="border-b border-line last:border-b-0">

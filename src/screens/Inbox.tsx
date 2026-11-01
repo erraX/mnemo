@@ -80,7 +80,7 @@ export function Inbox() {
           <textarea
             aria-label="粘贴多行文本"
             rows={4}
-            className="w-full resize-none bg-transparent text-base outline-none placeholder:text-muted"
+            className="w-full resize-none bg-transparent text-base placeholder:text-muted"
             placeholder={'一行一条：单词、短语，或整句原文\n从 Mac 复制后可直接在手机上粘贴'}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -92,21 +92,24 @@ export function Inbox() {
         {drafts.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted">收集箱是空的</p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {drafts.map((d) => {
-              const b = badge(d, dict[d.id])
-              return (
-                <li key={d.id} className="flex items-center gap-2 rounded-(--radius-field) bg-panel px-3 py-2">
-                  <Link to={`/note/new?draft=${d.id}`} className="min-w-0 flex-1">
-                    <div className="truncate text-[15px]">{d.raw}</div>
-                    <div className="text-xs text-muted">{statusLine(d, dict[d.id])}</div>
-                  </Link>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${b.cls}`}>{b.text}</span>
-                  <button type="button" aria-label={`删除 ${d.raw}`} className="grid h-11 w-11 shrink-0 place-items-center text-muted" onClick={() => setPendingDelete(d)}>✕</button>
-                </li>
-              )
-            })}
-          </ul>
+          <>
+            <p className="text-xs text-muted">共 {drafts.length} 条待处理</p>
+            <ul className="flex flex-col gap-2">
+              {drafts.map((d) => {
+                const b = badge(d, dict[d.id])
+                return (
+                  <li key={d.id} className="flex items-center gap-2 rounded-(--radius-field) bg-panel px-3 py-2">
+                    <Link to={`/note/new?draft=${d.id}`} className="min-w-0 flex-1">
+                      <div className="line-clamp-2 break-words text-[15px]">{d.raw}</div>
+                      <div className="text-xs text-muted">{statusLine(d, dict[d.id])}</div>
+                    </Link>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${b.cls}`}>{b.text}</span>
+                    <button type="button" aria-label={`删除 ${d.raw}`} className="grid h-11 w-11 shrink-0 place-items-center text-muted" onClick={() => setPendingDelete(d)}>✕</button>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
         )}
       </div>
 

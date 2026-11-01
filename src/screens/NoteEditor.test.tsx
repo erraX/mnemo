@@ -37,6 +37,7 @@ describe('NoteEditor (new)', () => {
     await waitFor(() => expect(screen.getByText('已从词典补全')).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: '+ 添加例句' }))
     fireEvent.change(screen.getByLabelText('例句 1'), { target: { value: 'I have some concerns about it.' } })
+    fireEvent.click(screen.getByRole('button', { name: '点词挖空' }))
     expect(screen.getByRole('button', { name: 'concerns' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: /保存 · 生成 3 张卡/ })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /保存 · 生成 3 张卡/ }))
@@ -220,6 +221,7 @@ describe('NoteEditor (draft prefill)', () => {
     expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concerns')
     expect(screen.queryByText('点一个词作为要记的词')).toBeNull()
     await waitFor(() => expect(screen.getByRole('button', { name: '改为原形 concern' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '点词挖空' }))
     expect(screen.getByRole('button', { name: 'concerns' }).getAttribute('aria-pressed')).toBe('true')
   })
 })
@@ -249,8 +251,23 @@ describe('NoteEditor (polish)', () => {
     expect(screen.getByText(/例句挖空：先给一条例句并挖一个空/)).toBeTruthy()
     expect(screen.getByText(/英 → 中：先填写单词或短语/)).toBeTruthy()
   })
-  it('shows an inline error when saving fails', async () => {
-    vi.spyOn(repo, 'createNote').mockRejectedValueOnce(new Error('disk full'))
+  it('renders one layer per example: the carved sentence by default, the textarea on demand', async () => {
+    const note = await createNote(db, {
+      headword: 'concern', meaning: 'n. 担忧', tags: [], enabledTypes: ['en2zh'],
+      examples: [{ text: 'I have some concerns about it.', blanks: [{ start: 12, end: 20 }] }],
+    })
+    renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
+    // 已经有挖空的例句直接进可点视图：打开记录就能看到自己挖在哪里
+    expect(await screen.findByRole('button', { name: 'concerns' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'concerns' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByLabelText('例句 1')).toBeNull()
+    // 改句子时切回 textarea，仍然只有一层
+    fireEvent.click(screen.getByRole('button', { name: '改原句' }))
+    expect((screen.getByLabelText('例句 1') as HTMLTextAreaElement).value).toBe('I have some concerns about it.')
+    expect(screen.queryByRole('button', { name: 'concerns' })).toBeNull()
+  })
+
+  it('shows an inline error when saving fails', async () => {    vi.spyOn(repo, 'createNote').mockRejectedValueOnce(new Error('disk full'))
     renderWithRouter(<NoteEditor />, { route: '/note/new', path: '/note/new' })
     fireEvent.change(await screen.findByLabelText('单词 / 短语'), { target: { value: 'x' } })
     fireEvent.click(screen.getByRole('button', { name: /保存 · 生成/ }))

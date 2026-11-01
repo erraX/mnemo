@@ -15,7 +15,7 @@ export function UpdatePrompt() {
     >
       <span>有新版本</span>
       <div className="flex gap-3">
-        <button className="text-muted" onClick={() => setNeedRefresh(false)}>稍后</button>
+        <button className="text-bg/70" onClick={() => setNeedRefresh(false)}>稍后</button>
         <button className="font-semibold" onClick={() => void updateServiceWorker(true)}>刷新</button>
       </div>
     </div>

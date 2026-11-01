@@ -5,8 +5,8 @@ type Size = 'md' | 'lg'
 
 const VARIANT: Record<Variant, string> = {
   primary: 'bg-accent text-white',
-  secondary: 'bg-easy-bg text-accent',
-  ghost: 'bg-transparent text-accent',
+  secondary: 'bg-easy-bg text-easy-fg',
+  ghost: 'bg-transparent text-accent-ink',
 }
 const SIZE: Record<Size, string> = { md: 'h-11 px-4 text-[15px]', lg: 'h-[50px] px-5 text-base' }
 

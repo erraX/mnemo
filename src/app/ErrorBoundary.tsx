@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error?: 
           <p className="mt-2 text-[15px] leading-normal text-muted">数据在本地，没有丢。重新加载通常就恢复了。</p>
           <p className="mt-2 break-words text-xs text-muted">{error.message}</p>
           <Button size="lg" className="mt-4 w-full" onClick={() => location.reload()}>重新加载</Button>
-          <a href="#/settings" className="mt-2 block py-3 text-sm text-accent">先去设置导出备份</a>
+          <a href="#/settings" className="mt-2 block py-3 text-sm text-accent-ink">先去设置导出备份</a>
         </div>
       </div>
     )

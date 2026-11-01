@@ -249,7 +249,7 @@ export function Review() {
           {noteLoaded && (
             <div className="mt-1 flex items-center justify-center gap-8 text-sm">
               <button type="button" className="min-h-11 text-muted disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
-              <button type="button" className="min-h-11 text-accent disabled:opacity-40" disabled={!current} onClick={() => current && navigate(`/note/${current.noteId}`)}>编辑</button>
+              <button type="button" className="min-h-11 text-accent-ink disabled:opacity-40" disabled={!current} onClick={() => current && navigate(`/note/${current.noteId}`)}>编辑</button>
             </div>
           )}
         </div>

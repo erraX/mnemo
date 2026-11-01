@@ -13,7 +13,7 @@ export function PlayButton({ onPlay, className = '' }: { onPlay: () => void; cla
       aria-label="播放发音"
       // 正面整卡可点翻面，播放不能冒泡成翻面
       onClick={(e) => { e.stopPropagation(); onPlay() }}
-      className={`grid h-11 w-11 place-items-center rounded-full bg-easy-bg text-sm text-accent ${className}`}
+      className={`grid h-11 w-11 place-items-center rounded-full bg-easy-bg text-sm text-easy-fg ${className}`}
     >▶</button>
   )
 }

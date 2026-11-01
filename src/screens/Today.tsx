@@ -31,6 +31,11 @@ export function Today({ dict }: { dict: DictLoadState }) {
   const noteCount = useLiveQuery(() => db.notes.count(), [], 0)
   const backupNudge = backupNudgeText(settings, noteCount)
   const total = counts.due + counts.fresh
+  // 一屏只有一个大数字，它必须代表"今天要做的事"；due 为 0 时把新卡顶上来，别让最大的字报一个 0
+  const headline = counts.due > 0 ? counts.due : counts.fresh
+  const caption = counts.due > 0
+    ? (counts.fresh > 0 ? `张待复习 · ${counts.fresh} 张新卡` : '张待复习')
+    : '张新卡'
   const coldStart = noteCount === 0 && drafts === 0
 
   return (
@@ -51,8 +56,8 @@ export function Today({ dict }: { dict: DictLoadState }) {
         <>
           <section className="rounded-(--radius-card) bg-panel p-4">
             <p className="flex items-baseline gap-1">
-              <span className="text-[34px] font-bold leading-none tracking-tight">{counts.due}</span>
-              <span className="text-[15px] text-muted">张待复习{counts.fresh > 0 ? ` · ${counts.fresh} 张新卡` : ''}</span>
+              <span className="text-[34px] font-bold leading-none tracking-tight">{headline}</span>
+              <span className="text-[15px] text-muted">{caption}</span>
             </p>
             {total === 0 ? (
               <p className="mt-3 text-[15px] leading-normal text-muted">今天没有要复习的 · 每天 04:00 之后算新的一天。</p>
@@ -66,7 +71,7 @@ export function Today({ dict }: { dict: DictLoadState }) {
               <div className="text-[15px]">收集箱</div>
               <div className="text-xs text-muted">{drafts > 0 ? `${drafts} 条待处理` : '粘贴单词或整句，逐条建卡'}</div>
             </div>
-            <span className="shrink-0 text-[15px] font-semibold text-accent">{drafts > 0 ? `去建卡 · ${drafts}` : '粘贴'}</span>
+            <span className="shrink-0 text-[15px] font-semibold text-accent-ink">{drafts > 0 ? `去建卡 · ${drafts}` : '粘贴'}</span>
           </Link>
         </>
       )}
@@ -74,7 +79,7 @@ export function Today({ dict }: { dict: DictLoadState }) {
       {backupNudge && (
         <Link to="/settings" className="flex items-center justify-between rounded-(--radius-field) border border-notice-line bg-notice-bg px-3 py-2 text-xs text-notice-fg">
           <span>{backupNudge}</span>
-          <span className="font-semibold text-accent">立即备份</span>
+          <span className="font-semibold text-accent-ink">去备份</span>
         </Link>
       )}
 
@@ -85,14 +90,17 @@ export function Today({ dict }: { dict: DictLoadState }) {
         <p className="text-xs text-again-fg">词典没准备好，建卡时不会自动补全释义 · 刷新页面重试</p>
       )}
 
-      <Link
-        to="/note/new"
-        aria-label="建卡"
-        className="fixed right-5 grid h-[52px] w-[52px] place-items-center rounded-full bg-accent text-3xl leading-none text-white shadow-lg shadow-accent/35"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 76px)' }}
-      >
-        +
-      </Link>
+      <div className="pointer-events-none fixed inset-x-0 z-20" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 76px)' }}>
+        <div className="mx-auto flex max-w-md justify-end px-4">
+          <Link
+            to="/note/new"
+            aria-label="建卡"
+            className="pointer-events-auto grid h-[52px] w-[52px] place-items-center rounded-full bg-accent text-3xl leading-none text-white shadow-lg shadow-accent/35"
+          >
+            +
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

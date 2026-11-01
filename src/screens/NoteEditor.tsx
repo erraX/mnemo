@@ -6,7 +6,7 @@ import { allTags, createNote, deleteNote, findDuplicate, getSettings, planNoteUp
 import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type CardType, type Note } from '@/domain/types'
 import { tokenize } from '@/lib/cloze'
 import { lookupWord } from '@/lib/dict'
-import { canSave, formAvailability, initialForm, reduceForm, saveLabel, toNoteInput } from '@/lib/noteForm'
+import { canSave, formAvailability, initialForm, reduceForm, saveBlocker, saveLabel, toNoteInput } from '@/lib/noteForm'
 import { useAudio } from '@/app/useAudio'
 import { ClozeEditor } from '@/components/ClozeEditor'
 import { Button } from '@/components/ui/Button'
@@ -17,7 +17,7 @@ import { SheetHeader } from '@/components/ui/SheetHeader'
 
 export const LOOKUP_DEBOUNCE_MS = 300
 
-const inputCls = 'w-full bg-transparent text-base outline-none placeholder:text-muted'
+const inputCls = 'w-full bg-transparent text-base placeholder:text-muted'
 
 /** 只比"填了什么"：卡型勾选不拿来判脏，它的删除另有确认 */
 function contentKey(f: { headword: string; phonetic?: string; meaning: string; examples: Array<{ text: string }>; tags: string | string[] }): string {
@@ -63,6 +63,9 @@ export function NoteEditor() {
   const [pendingDelete, setPendingDelete] = useState<{ cards: number; logs: number } | undefined>(undefined)
   // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
   const [headwordDirty, setHeadwordDirty] = useState(false)
+  // 例句视图：同一时刻只渲染一层——要么 textarea，要么可点词的句子
+  // 已经有挖空的例句默认直接进挖空视图，打开记录就能看到自己挖在哪里
+  const [exampleView, setExampleView] = useState<Record<string, 'carve' | 'edit'>>({})
   const lookupEnabled = mode === 'new' || headwordDirty
   const headwordRef = useRef<HTMLInputElement>(null)
 
@@ -83,7 +86,10 @@ export function NoteEditor() {
       }
     }
     if (mode === 'edit' && note && loadedFor !== note.id) {
-      dispatch({ type: 'reset', state: initialForm(settings.lastEnabledTypes, note) })
+      const next = initialForm(settings.lastEnabledTypes, note)
+      dispatch({ type: 'reset', state: next })
+      // 打开已有记录时，已挖空的例句直接进可点视图；新建/正在写的例句不会被自动检测把输入框切走
+      setExampleView(Object.fromEntries(next.examples.filter((e) => e.blanks.length > 0).map((e) => [e.id, 'carve' as const])))
       setLoadedFor(note.id)
     }
   }, [mode, note, draft, settings, loadedFor, prefilledFor, form])
@@ -167,7 +173,7 @@ export function NoteEditor() {
 
   const dictHint =
     form.dict.status === 'hit' ? <span className="text-good-fg"><span aria-hidden="true">✓ </span>已从词典补全</span>
-    : form.dict.status === 'miss' ? <span className="text-accent">词典没有，手动填写</span>
+    : form.dict.status === 'miss' ? <span className="text-accent-ink">词典没有，手动填写</span>
     : null
 
   // 必须在所有 hook 之后早返回
@@ -202,7 +208,7 @@ export function NoteEditor() {
           />
           {form.pendingHeadwordPick && form.examples[0] && (
             <div className="mt-2 rounded-(--radius-field) bg-bg p-2">
-              <div className="mb-1 text-[10px] text-muted">点一个词作为要记的词</div>
+              <div className="mb-1 text-[11px] text-muted">点一个词作为要记的词</div>
               <p className="leading-8">
                 {tokenize(form.examples[0].text).map((t, i) =>
                   t.isWord ? (
@@ -215,7 +221,7 @@ export function NoteEditor() {
             </div>
           )}
           {form.dict.lemma && (
-            <button type="button" className="mt-1 text-sm text-accent" onClick={() => dispatch({ type: 'acceptLemma' })}>
+            <button type="button" className="mt-1 text-sm text-accent-ink" onClick={() => dispatch({ type: 'acceptLemma' })}>
               改为原形 {form.dict.lemma}
             </button>
           )}
@@ -229,7 +235,7 @@ export function NoteEditor() {
         <Field label="音标">
           <div className="flex items-center gap-2">
             <input aria-label="音标" className={inputCls} value={form.phonetic} placeholder="短语可留空" onChange={(e) => dispatch({ type: 'phonetic', value: e.target.value })} />
-            <button type="button" aria-label="播放发音" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-easy-bg text-accent" disabled={!form.headword.trim()} onClick={() => void audio.play(form.headword.trim())}>▶</button>
+            <button type="button" aria-label="播放发音" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-easy-bg text-easy-fg" disabled={!form.headword.trim()} onClick={() => void audio.play(form.headword.trim())}>▶</button>
           </div>
         </Field>
 
@@ -237,25 +243,45 @@ export function NoteEditor() {
           <textarea aria-label="释义" rows={3} className={`${inputCls} resize-none whitespace-pre-line`} value={form.meaning} onChange={(e) => dispatch({ type: 'meaning', value: e.target.value })} />
         </Field>
 
-        {form.examples.map((ex, i) => (
-          <Field key={ex.id} label={`例句 ${i + 1}`} hint={<button type="button" aria-label={`删除例句 ${i + 1}`} className="text-accent" onClick={() => dispatch({ type: 'removeExample', id: ex.id })}>删除</button>}>
-            <textarea
-              aria-label={`例句 ${i + 1}`}
-              rows={2}
-              placeholder="粘一段原文进来，效果比词典例句好"
-              className={`${inputCls} resize-none`}
-              value={ex.text}
-              onChange={(e) => dispatch({ type: 'exampleText', id: ex.id, value: e.target.value })}
-            />
-            {ex.text.trim() && (
-              <>
-                <div className="mt-1 text-[10px] text-muted">点词改挖空</div>
+        {form.examples.map((ex, i) => {
+          const carving = exampleView[ex.id] === 'carve'
+          const hasText = ex.text.trim().length > 0
+          return (
+            <Field
+              key={ex.id}
+              label={`例句 ${i + 1}`}
+              hint={
+                <>
+                  {hasText && (
+                    <button
+                      type="button"
+                      aria-pressed={carving}
+                      className="min-h-6 underline underline-offset-4"
+                      onClick={() => setExampleView({ ...exampleView, [ex.id]: carving ? 'edit' : 'carve' })}
+                    >
+                      {carving ? '改原句' : '点词挖空'}
+                    </button>
+                  )}
+                  <button type="button" aria-label={`删除例句 ${i + 1}`} className="min-h-6 text-accent-ink" onClick={() => dispatch({ type: 'removeExample', id: ex.id })}>删除</button>
+                </>
+              }
+            >
+              {carving ? (
                 <ClozeEditor text={ex.text} blanks={ex.blanks} onChange={(blanks) => dispatch({ type: 'exampleBlanks', id: ex.id, blanks })} />
-              </>
-            )}
-            <input aria-label={`来源 ${i + 1}`} className={`${inputCls} mt-1`} placeholder="来源：文章名 / 剧名（可空）" value={ex.source} onChange={(e) => dispatch({ type: 'exampleSource', id: ex.id, value: e.target.value })} />
-          </Field>
-        ))}
+              ) : (
+                <textarea
+                  aria-label={`例句 ${i + 1}`}
+                  rows={2}
+                  placeholder="粘一段原文进来，效果比词典例句好"
+                  className={`${inputCls} resize-none`}
+                  value={ex.text}
+                  onChange={(e) => dispatch({ type: 'exampleText', id: ex.id, value: e.target.value })}
+                />
+              )}
+              <input aria-label={`来源 ${i + 1}`} className={`${inputCls} mt-1`} placeholder="来源：文章名 / 剧名（可空）" value={ex.source} onChange={(e) => dispatch({ type: 'exampleSource', id: ex.id, value: e.target.value })} />
+            </Field>
+          )
+        })}
         <Button variant="secondary" onClick={() => dispatch({ type: 'addExample' })}>+ 添加例句</Button>
 
         <Field label="标签">
@@ -287,6 +313,7 @@ export function NoteEditor() {
         <Button size="lg" className="mt-2" disabled={!canSave(form) || saving} onClick={() => void save()}>
           {saveLabel(form, mode)}
         </Button>
+        {saveBlocker(form) && !saving && <p className="text-xs text-muted">{saveBlocker(form)}</p>}
         {error && <p role="alert" className="text-xs text-again-fg">{error}</p>}
 
         {mode === 'edit' && (

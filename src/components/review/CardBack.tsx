@@ -13,7 +13,7 @@ export function CardBack({ note, onPlay }: { note: Note; onPlay: () => void }) {
       <p className="whitespace-pre-line text-base leading-relaxed">{note.meaning}</p>
       {note.examples.map((ex, i) => (
         <div key={i} className="mt-1">
-          <ClozeText text={ex.text} blanks={ex.blanks} mode="highlight" className="text-base leading-relaxed" />
+          <ClozeText text={ex.text} blanks={ex.blanks} mode="highlight" target={note.headword} className="text-base leading-relaxed" />
           {ex.source && <div className="mt-0.5 text-xs text-muted">— {ex.source}</div>}
         </div>
       ))}

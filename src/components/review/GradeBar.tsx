@@ -19,7 +19,7 @@ export function GradeBar({ labels, onGrade, disabled = false }: { labels: Record
           className={`flex h-[52px] flex-col items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-40 ${b.cls}`}
         >
           <span>{b.label}</span>
-          <span className="text-[10px] font-normal">{labels[b.rating]}</span>
+          <span className="text-[11px] font-normal">{labels[b.rating]}</span>
         </button>
       ))}
     </div>

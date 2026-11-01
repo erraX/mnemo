@@ -6,10 +6,10 @@ export function SheetHeader({
       className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-panel/95 px-4 pb-2 backdrop-blur"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 10px)' }}
     >
-      <button type="button" className="min-w-12 text-left text-[15px] text-accent" onClick={onCancel}>{cancelLabel}</button>
+      <button type="button" className="min-h-11 min-w-12 text-left text-[15px] text-accent-ink" onClick={onCancel}>{cancelLabel}</button>
       <h1 className="text-[15px] font-semibold">{title}</h1>
       {action ? (
-        <button type="button" className="min-w-12 text-right text-[15px] font-semibold text-accent disabled:opacity-40" disabled={action.disabled} onClick={action.onClick}>
+        <button type="button" className="min-h-11 min-w-12 text-right text-[15px] font-semibold text-accent-ink disabled:opacity-40" disabled={action.disabled} onClick={action.onClick}>
           {action.label}
         </button>
       ) : <span className="min-w-12" />}

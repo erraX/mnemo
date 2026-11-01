@@ -189,5 +189,15 @@ export function canSave(s: NoteFormState): boolean {
 }
 
 export function saveLabel(s: NoteFormState, mode: 'new' | 'edit'): string {
-  return mode === 'edit' ? '保存修改' : `保存 · 生成 ${effectiveTypes(s).length} 张卡`
+  // 禁用时不在按钮里放理由：40% 透明的字读不清，理由要单独一行
+  if (mode === 'edit') return '保存修改'
+  const count = effectiveTypes(s).length
+  return count > 0 ? `保存 · 生成 ${count} 张卡` : '保存'
+}
+
+/** 保存被拦住时，用一句话说清还差什么（放在按钮外面，不进 40% 透明的按钮） */
+export function saveBlocker(s: NoteFormState): string | undefined {
+  if (!s.headword.trim()) return '还差一个词头：先填单词或短语。'
+  if (effectiveTypes(s).length === 0) return '还差一种卡型：至少启用一个能生成的卡型。'
+  return undefined
 }

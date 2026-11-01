@@ -28,7 +28,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <div className="mb-1 px-1 text-[11px] uppercase tracking-wider text-muted">{title}</div>
+      <div className="mb-1 px-1 text-[11px] text-muted">{title}</div>
       <div className="overflow-hidden rounded-(--radius-card) bg-panel">{children}</div>
     </section>
   )

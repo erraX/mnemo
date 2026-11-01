@@ -81,15 +81,9 @@ export function Import() {
   const busy = phase !== 'idle'
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pb-10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
-      <Link to="/settings" className="flex min-h-11 items-center text-accent">返回设置</Link>
+      <Link to="/settings" className="flex min-h-11 items-center text-accent-ink">返回</Link>
       <h1 className="text-[30px] font-bold leading-tight tracking-tight">导入词库</h1>
       <p className="text-sm text-muted">只追加新词，已有词自动跳过，不改变现有卡片和复习进度。</p>
-      <section className="rounded-(--radius-card) bg-panel p-4">
-        <h2 className="font-semibold">支持的格式</h2>
-        <p className="mt-2 text-sm text-muted">Vocably 导出的 CSV / TSV：列间选 Comma 或 Tab，记录间选 New line。</p>
-        <p className="mt-2 text-sm text-muted">保留词头、中文释义、IPA 和例句；不导入英文释义、词性、时态和旧复习进度。新词会按每日额度开始学习。</p>
-        <p className="mt-2 text-sm text-muted">上限 5 MB、10000 条。Mnemo 的 JSON 备份请在设置中使用「从文件恢复」，恢复会覆盖全部数据。</p>
-      </section>
       <Button size="lg" className="w-full" disabled={busy} onClick={() => fileRef.current?.click()}>选择文件</Button>
       <input ref={fileRef} type="file" aria-label="选择词库文件" className="sr-only" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" disabled={busy}
         onChange={(e) => {
@@ -97,6 +91,12 @@ export function Import() {
           e.target.value = ''
           void selectFile(file)
         }} />
+      <section className="rounded-(--radius-card) bg-panel p-4">
+        <h2 className="font-semibold">支持的格式</h2>
+        <p className="mt-2 text-sm text-muted">Vocably 导出的 CSV / TSV：列间选 Comma 或 Tab，记录间选 New line。</p>
+        <p className="mt-2 text-sm text-muted">保留词头、中文释义、IPA 和例句；不导入英文释义、词性、时态和旧复习进度。新词会按每日额度开始学习。</p>
+        <p className="mt-2 text-sm text-muted">上限 5 MB、10000 条。Mnemo 的 JSON 备份请在设置中使用「从文件恢复」，恢复会覆盖全部数据。</p>
+      </section>
       {busy && <p role="status" className="text-sm text-muted">{phase === 'reading' ? '正在读取文件…' : '正在导入，请稍候…'}</p>}
       {error && <p role="alert" className="text-sm text-again-fg">{error}</p>}
       {selection && (

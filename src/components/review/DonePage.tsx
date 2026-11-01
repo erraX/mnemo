@@ -10,8 +10,8 @@ export function DonePage({
         <div className="grid h-[72px] w-[72px] place-items-center rounded-full bg-good-bg text-3xl text-good-fg">✓</div>
         <h2 className="mt-2 text-[22px] font-bold">今天的复习完成了</h2>
         <div className="mt-3 flex gap-5 text-xs text-muted">
-          <div><b className="block text-[22px] leading-tight text-ink" data-stat="reviewed">{reviewed}</b>复习</div>
-          <div><b className="block text-[22px] leading-tight text-ink" data-stat="learned">{learned}</b>新学</div>
+          <div><b className="block text-[22px] leading-tight text-ink" data-stat="reviewed">{reviewed}</b>评分</div>
+          <div><b className="block text-[22px] leading-tight text-ink" data-stat="learned">{learned}</b>新卡</div>
           <div><b className="block text-[22px] leading-tight text-ink" data-stat="minutes">{minutes}</b>分钟</div>
         </div>
         {extra}
