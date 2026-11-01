@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T01:53:17Z",
+  "title": "Design System: Mnemo",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Signal Blue 信号蓝",
+        "canonical": "#0071e3",
+        "tonalRamp": ["#00356b", "#005fbf", "#2083e7", "#5aa3ed", "#8cbff2", "#b5d6f7", "#d6e8fa", "#eaf4fd"]
+      },
+      "primary-night": {
+        "role": "primary",
+        "displayName": "Signal Blue Night 夜色信号蓝",
+        "canonical": "#0a84ff",
+        "tonalRamp": ["#043566", "#075eb5", "#0e86ff", "#4da5ff", "#82c0ff", "#afd7ff", "#d2e9ff", "#e9f4ff"]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "Card White on Accent 蓝上白",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757575", "#999999", "#b8b8b8", "#d1d1d1", "#e6e6e6", "#f2f2f2"]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Cool Paper 冷纸白",
+        "canonical": "#f5f5f7",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757576", "#99999a", "#b7b7b9", "#d1d1d3", "#e5e5e7", "#f2f2f4"]
+      },
+      "neutral-panel": {
+        "role": "neutral",
+        "displayName": "Card White 卡面白",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757575", "#999999", "#b8b8b8", "#d1d1d1", "#e6e6e6", "#f2f2f2"]
+      },
+      "neutral-ink": {
+        "role": "neutral",
+        "displayName": "Ink 墨黑",
+        "canonical": "#1d1d1f",
+        "tonalRamp": ["#2e2e30", "#515153", "#757576", "#99999a", "#b8b8b8", "#d1d1d1", "#e5e5e6", "#f2f2f2"]
+      },
+      "neutral-muted": {
+        "role": "neutral",
+        "displayName": "Fog Grey 雾灰",
+        "canonical": "#86868b",
+        "tonalRamp": ["#2e2e2f", "#515154", "#757579", "#99999d", "#b7b7ba", "#d1d1d3", "#e5e5e6", "#f2f2f3"]
+      },
+      "neutral-line": {
+        "role": "neutral",
+        "displayName": "Hairline 发丝灰",
+        "canonical": "#e5e5e7",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757576", "#99999a", "#b7b7b9", "#d1d1d3", "#e5e5e7", "#f2f2f3"]
+      },
+      "midnight": {
+        "role": "neutral",
+        "displayName": "Midnight 纯黑",
+        "canonical": "#000000",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757575", "#999999", "#b8b8b8", "#d1d1d1", "#e6e6e6", "#f2f2f2"]
+      },
+      "night-card": {
+        "role": "neutral",
+        "displayName": "Night Card 夜色卡面",
+        "canonical": "#1c1c1e",
+        "tonalRamp": ["#2e2e30", "#515153", "#757576", "#99999a", "#b8b8b8", "#d1d1d1", "#e5e5e6", "#f2f2f2"]
+      },
+      "ink-night": {
+        "role": "neutral",
+        "displayName": "Ink Night 夜色墨白",
+        "canonical": "#f5f5f7",
+        "tonalRamp": ["#2e2e2e", "#525252", "#757576", "#99999a", "#b7b7b9", "#d1d1d3", "#e5e5e7", "#f2f2f4"]
+      },
+      "fog-grey-night": {
+        "role": "neutral",
+        "displayName": "Fog Grey Night 夜色雾灰",
+        "canonical": "#8e8e93",
+        "tonalRamp": ["#2e2e2f", "#515154", "#757579", "#99999d", "#b7b7bb", "#d1d1d3", "#e5e5e7", "#f2f2f3"]
+      },
+      "hairline-night": {
+        "role": "neutral",
+        "displayName": "Hairline Night 夜色发丝线",
+        "canonical": "#2c2c2e",
+        "tonalRamp": ["#2e2e30", "#515153", "#757577", "#99999a", "#b8b8b8", "#d1d1d2", "#e5e5e6", "#f2f2f2"]
+      },
+      "cloze-marker": {
+        "role": "tertiary",
+        "displayName": "Marker Yellow 荧光笔黄",
+        "canonical": "#fff3bf",
+        "tonalRamp": ["#302e24", "#565240", "#7c765d", "#a19a79", "#c2b991", "#ddd2a5", "#f2e7b5", "#fff3c1"]
+      },
+      "signal-yellow": {
+        "role": "tertiary",
+        "displayName": "Signal Yellow 夜光黄",
+        "canonical": "#ffd60a",
+        "tonalRamp": ["#382f02", "#645404", "#907906", "#bc9d07", "#e1bd09", "#ffd710", "#ffe97a", "#fff4bd"]
+      },
+      "notice-bg": {
+        "role": "tertiary",
+        "displayName": "Caution Paper 提醒纸",
+        "canonical": "#fff8e6",
+        "tonalRamp": ["#2f2e2b", "#54524c", "#79756d", "#9d998e", "#bdb7aa", "#d7d1c2", "#ece5d5", "#f9f2e0"]
+      },
+      "notice-line": {
+        "role": "tertiary",
+        "displayName": "Caution Edge 提醒纸边",
+        "canonical": "#ffe2a8",
+        "tonalRamp": ["#332e22", "#5b513c", "#837456", "#ab9871", "#cdb687", "#eacf9a", "#ffe4ad", "#fff1d6"]
+      },
+      "notice-fg": {
+        "role": "tertiary",
+        "displayName": "Caution Ink 提醒墨",
+        "canonical": "#8a5a00",
+        "tonalRamp": ["#442c00", "#784e00", "#9b7225", "#b5975e", "#cbb68e", "#ded0b6", "#ede5d7", "#f6f2eb"]
+      },
+      "again-bg": {
+        "role": "tertiary",
+        "displayName": "Faded Coral 褪色珊瑚",
+        "canonical": "#ffe5e3",
+        "tonalRamp": ["#322d2c", "#59504f", "#807372", "#a69594", "#c8b3b2", "#e3cccb", "#fae0de", "#ffefee"]
+      },
+      "again-fg": {
+        "role": "tertiary",
+        "displayName": "Faded Coral Ink 珊瑚墨",
+        "canonical": "#c0392b",
+        "tonalRamp": ["#681f17", "#b93729", "#cc5f54", "#d98880", "#e5aca6", "#eecac6", "#f6e1df", "#faf0ef"]
+      },
+      "hard-bg": {
+        "role": "tertiary",
+        "displayName": "Amber Wash 琥珀薄涂",
+        "canonical": "#fff0d6",
+        "tonalRamp": ["#312e29", "#565148", "#7c7568", "#a29888", "#c2b7a3", "#ddd0b9", "#f3e4cc", "#fff1d9"]
+      },
+      "hard-fg": {
+        "role": "tertiary",
+        "displayName": "Amber Ink 琥珀墨",
+        "canonical": "#b7791f",
+        "tonalRamp": ["#422b0b", "#754d14", "#a86f1c", "#c5944c", "#d7b481", "#e5cfae", "#f1e4d2", "#f8f2e9"]
+      },
+      "good-bg": {
+        "role": "tertiary",
+        "displayName": "Moss Wash 苔绿薄涂",
+        "canonical": "#e3f6e8",
+        "tonalRamp": ["#2b2f2c", "#4d534f", "#6f7871", "#909c93", "#adbbb1", "#c5d5c9", "#d8eadd", "#e6f7ea"]
+      },
+      "good-fg": {
+        "role": "tertiary",
+        "displayName": "Moss Ink 苔绿墨",
+        "canonical": "#1e8449",
+        "tonalRamp": ["#0d3920", "#176638", "#2f8d57", "#65ab82", "#93c4a8", "#bad9c7", "#d8eae0", "#ecf4ef"]
+      },
+      "easy-bg": {
+        "role": "tertiary",
+        "displayName": "Sky Wash 天蓝薄涂",
+        "canonical": "#e8f4fd",
+        "tonalRamp": ["#2c2e30", "#4e5255", "#70767b", "#939aa0", "#b0b9c0", "#c8d3db", "#dce7f0", "#e8f4fd"]
+      },
+      "easy-fg": {
+        "role": "tertiary",
+        "displayName": "Sky Ink 天蓝墨",
+        "canonical": "#0071e3",
+        "tonalRamp": ["#00356b", "#005fbf", "#2083e7", "#5aa3ed", "#8cbff2", "#b5d6f7", "#d6e8fa", "#eaf4fd"]
+      },
+      "again-fg-night": {
+        "role": "tertiary",
+        "displayName": "Faded Coral Night 夜色珊瑚",
+        "canonical": "#ff6961",
+        "tonalRamp": ["#562321", "#993f3a", "#db5a53", "#ff7e77", "#ffa5a0", "#ffc5c2", "#ffdfdd", "#ffefee"]
+      },
+      "hard-fg-night": {
+        "role": "tertiary",
+        "displayName": "Amber Night 夜色琥珀",
+        "canonical": "#ffb340",
+        "tonalRamp": ["#3f2c10", "#6f4e1c", "#a07028", "#d19334", "#fbb03f", "#ffcc7e", "#ffe3b8", "#fff1db"]
+      },
+      "good-fg-night": {
+        "role": "tertiary",
+        "displayName": "Moss Night 夜色苔绿",
+        "canonical": "#30d158",
+        "tonalRamp": ["#0d3a18", "#18672b", "#22943e", "#2cc151", "#59da79", "#94e7a9", "#c4f2cf", "#e1f8e7"]
+      },
+      "again-bg-night": {
+        "role": "tertiary",
+        "displayName": "Faded Coral Night Wash 夜色珊瑚薄涂",
+        "canonical": "color-mix(in srgb, #ff6961 18%, transparent)",
+        "tonalRamp": ["#322d2c", "#3b2b2a", "#452a2a", "#5a3634", "#704340", "#8c5854", "#b07c78", "#d6b0ad"]
+      },
+      "hard-bg-night": {
+        "role": "tertiary",
+        "displayName": "Amber Night Wash 夜色琥珀薄涂",
+        "canonical": "color-mix(in srgb, #ffb340 18%, transparent)",
+        "tonalRamp": ["#312e29", "#3a3125", "#453724", "#5c482c", "#755b35", "#957542", "#bb9757", "#e0c193"]
+      },
+      "good-bg-night": {
+        "role": "tertiary",
+        "displayName": "Moss Night Wash 夜色苔绿薄涂",
+        "canonical": "color-mix(in srgb, #30d158 18%, transparent)",
+        "tonalRamp": ["#2b2f2c", "#28342b", "#203d28", "#295034", "#346843", "#458757", "#5cae70", "#8ed4a0"]
+      },
+      "easy-bg-night": {
+        "role": "tertiary",
+        "displayName": "Sky Night Wash 夜色天蓝薄涂",
+        "canonical": "color-mix(in srgb, #0a84ff 18%, transparent)",
+        "tonalRamp": ["#2c2e30", "#263038", "#192f47", "#1c3d5e", "#204d78", "#2a6499", "#3a80c0", "#5aa0e0"]
+      }
+    },
+    "typographyMeta": {
+      "numeric": { "displayName": "Numeric 数字", "purpose": "首页待复习/新卡计数。全系统最大的元素。" },
+      "display": { "displayName": "Display 大标题", "purpose": "页面标题、复习正反面的词头。" },
+      "headline": { "displayName": "Headline 标题", "purpose": "完成页与歇脚页的单一标题句。" },
+      "meaning": { "displayName": "Meaning 释义", "purpose": "中→英正面的释义全文，保留换行。" },
+      "sentence": { "displayName": "Sentence 例句", "purpose": "例句挖空正面的原句。" },
+      "body": { "displayName": "Body 正文", "purpose": "背面释义与例句、搜索框、输入框正文。" },
+      "body-sm": { "displayName": "Body Small 小正文", "purpose": "设置行、sheet 头部动作、音标行。" },
+      "small": { "displayName": "Small 说明", "purpose": "副标题、chip、评分按钮主标签。" },
+      "caption": { "displayName": "Caption 注解", "purpose": "例句来源、标签、列表副行、提醒条、toast。" },
+      "label": { "displayName": "Label 提示标签", "purpose": "复习卡面上的大写提示词。" },
+      "micro": { "displayName": "Micro 微标签", "purpose": "表单字段标签、tab bar 文字、评分间隔预览。" }
+    },
+    "shadows": [
+      {
+        "name": "fab-lift",
+        "value": "0 10px 15px -3px rgba(0,113,227,0.35), 0 4px 6px -4px rgba(0,113,227,0.35)",
+        "purpose": "只给建卡 FAB。带信号蓝色调的阴影，让它像被按起来。"
+      },
+      {
+        "name": "floating-notice",
+        "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+        "purpose": "只给“有新版本”浮动提示条。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-color",
+        "value": "transition-colors 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "chip 选中、按钮状态等颜色变化。系统里唯一的状态过渡。"
+      },
+      {
+        "name": "toggle-slide",
+        "value": "transition-all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "设置页开关的滑块位移与底色变化。"
+      },
+      {
+        "name": "instant-flip",
+        "value": "none",
+        "purpose": "翻面、页面切换均为瞬时，不加过渡。新增动效须先证明它帮助判断状态。"
+      }
+    ],
+    "breakpoints": [
+      { "name": "column-max", "value": "448px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "唯一的高权重动作：开始复习、看答案、继续、回到首页。",
+      "html": "<button class=\"ds-btn-primary\">开始复习</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 50px; padding: 0 20px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-accent, #0071e3); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms; } .ds-btn-primary:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 88%, #000); } .ds-btn-primary:active { background: color-mix(in srgb, var(--color-accent, #0071e3) 76%, #000); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "另一个可选动作，不是取消：再学 10 张新卡、重试、全选搜索结果。",
+      "html": "<button class=\"ds-btn-secondary\">再学 10 张新卡</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 50px; padding: 0 20px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-accent, #0071e3)); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-secondary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Ghost Text Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "低频或退出动作：sheet 头部的取消/保存、批量管理入口。删除类动作用 again-fg 文字。",
+      "html": "<div class=\"ds-row\"><button class=\"ds-btn-ghost\">取消</button><span class=\"ds-title\">新卡片</span><button class=\"ds-btn-ghost ds-strong\">保存</button></div>",
+      "css": ".ds-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--color-line, #e5e5e7); background: var(--color-panel, #fff); } .ds-title { font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; font-weight: 600; color: var(--color-ink, #1d1d1f); } .ds-btn-ghost { height: 44px; padding: 0 16px; border: none; border-radius: var(--radius-card, 14px); background: transparent; color: var(--color-accent, #0071e3); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; font-weight: 400; cursor: pointer; transition: background-color 150ms; } .ds-btn-ghost.ds-strong { font-weight: 600; } .ds-btn-ghost:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 8%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card Type Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "建卡时的卡型多选。选中反色成 Ink 底，不可用态 40% 透明并用 title 说明原因。",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-on\" aria-pressed=\"true\">中 → 英</button><button class=\"ds-chip ds-on\" aria-pressed=\"true\">例句挖空</button><button class=\"ds-chip\" aria-pressed=\"false\">英 → 中</button><button class=\"ds-chip\" disabled>置灰</button></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; } .ds-chip { padding: 6px 12px; border: 1px solid var(--color-line, #e5e5e7); border-radius: 999px; background: var(--color-panel, #fff); color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 14px; line-height: 1.4; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms, border-color 150ms; } .ds-chip:hover { border-color: var(--color-muted, #86868b); } .ds-chip:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-chip.ds-on { background: var(--color-ink, #1d1d1f); border-color: var(--color-ink, #1d1d1f); color: var(--color-bg, #f5f5f7); } .ds-chip:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Form Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "建卡表单的字段容器：卡面白底 + 12px 圆角，10px 大写标签，输入本身透明无边框。",
+      "html": "<div class=\"ds-field\"><div class=\"ds-field-label\"><span>单词 / 短语</span><em>已从词典补全</em></div><input class=\"ds-field-input\" value=\"concern\" aria-label=\"单词 / 短语\" /></div>",
+      "css": ".ds-field { padding: 8px 12px; border-radius: var(--radius-field, 12px); background: var(--color-panel, #fff); } .ds-field-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-muted, #86868b); } .ds-field-label em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--color-good-fg, #1e8449); } .ds-field-input { width: 100%; padding: 0; border: none; background: transparent; color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 20px; font-weight: 600; outline: none; } .ds-field:focus-within { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent, #0071e3) 35%, transparent); }"
+    },
+    {
+      "name": "Note List Row",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "卡片列表的一行：词头 16/600、释义首行雾灰、右侧卡型小标签与到期文案。",
+      "html": "<div class=\"ds-list\"><div class=\"ds-li\"><div class=\"ds-li-main\"><div class=\"ds-hw\">concern</div><div class=\"ds-mn\">n. 担忧，顾虑</div></div><div class=\"ds-li-right\"><div class=\"ds-types\"><span class=\"ds-ty ds-ty-on\">中英</span><span class=\"ds-ty ds-ty-on\">挖空</span><span class=\"ds-ty\">英中</span></div><span class=\"ds-due\">新</span></div></div></div>",
+      "css": ".ds-list { overflow: hidden; border-radius: var(--radius-card, 14px); background: var(--color-panel, #fff); } .ds-li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 12px 16px; border-bottom: 1px solid var(--color-line, #e5e5e7); } .ds-li:last-child { border-bottom: none; } .ds-li-main { min-width: 0; flex: 1; } .ds-hw { font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; color: var(--color-ink, #1d1d1f); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-mn { margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 12px; color: var(--color-muted, #86868b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-li-right { flex-shrink: 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 11px; color: var(--color-muted, #86868b); } .ds-types { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 2px; } .ds-ty { padding: 0 4px; border-radius: 4px; background: var(--color-line, #e5e5e7); color: var(--color-muted, #86868b); font-size: 9px; } .ds-ty.ds-ty-on { background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); } .ds-due { color: var(--color-accent, #0071e3); }"
+    },
+    {
+      "name": "Grade Bar",
+      "kind": "custom",
+      "refersTo": "grade-button",
+      "description": "四档打分条：忘了 / 困难 / 记得 / 简单，每格带预计间隔。系统里唯一的彩色事件。",
+      "html": "<div class=\"ds-grades\"><button class=\"ds-g ds-g1\"><span>忘了</span><small>10 分钟</small></button><button class=\"ds-g ds-g2\"><span>困难</span><small>2 天</small></button><button class=\"ds-g ds-g3\"><span>记得</span><small>5 天</small></button><button class=\"ds-g ds-g4\"><span>简单</span><small>12 天</small></button></div>",
+      "css": ".ds-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } .ds-g { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 52px; padding: 9px 4px; border: none; border-radius: var(--radius-field, 12px); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-g small { margin-top: 2px; font-size: 10px; font-weight: 400; opacity: 0.75; } .ds-g:hover { filter: brightness(0.97); } .ds-g:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; } .ds-g1 { background: var(--color-again-bg, #ffe5e3); color: var(--color-again-fg, #c0392b); } .ds-g2 { background: var(--color-hard-bg, #fff0d6); color: var(--color-hard-fg, #b7791f); } .ds-g3 { background: var(--color-good-bg, #e3f6e8); color: var(--color-good-fg, #1e8449); } .ds-g4 { background: var(--color-easy-bg, #e8f4fd); color: var(--color-easy-fg, #0071e3); }"
+    },
+    {
+      "name": "Review Card Front",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "复习正面（英→中）：11px 大写提示、30/700 词头、雾灰音标与 44px 圆形发音按钮，整体居中。",
+      "html": "<div class=\"ds-front\"><div class=\"ds-front-label\">这个词什么意思</div><div class=\"ds-front-word\">concern</div><div class=\"ds-front-ipa\"><span>/kənˈsɜːrn/</span><button class=\"ds-play\" aria-label=\"播放发音\">▶</button></div></div>",
+      "css": ".ds-front { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; } .ds-front-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted, #86868b); } .ds-front-word { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-ink, #1d1d1f); } .ds-front-ipa { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--color-muted, #86868b); } .ds-play { display: grid; place-items: center; width: 44px; height: 44px; border: none; border-radius: 999px; background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); font-size: 14px; cursor: pointer; transition: background-color 150ms; } .ds-play:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-accent, #0071e3)); } .ds-play:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "三项底部导航：今日 / 卡片 / 设置。24px 圆角色块图标，当前项整组变蓝。",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-active\"><span class=\"ds-tab-icon\"></span>今日</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"></span>卡片</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"></span>设置</a></nav>",
+      "css": ".ds-tabs { display: flex; justify-content: space-around; height: 49px; padding-top: 8px; border-top: 1px solid var(--color-line, #e5e5e7); background: color-mix(in srgb, var(--color-panel, #fff) 95%, transparent); backdrop-filter: blur(12px); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 10px; } .ds-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; color: var(--color-muted, #86868b); text-decoration: none; cursor: pointer; } .ds-tab-icon { width: 24px; height: 24px; border-radius: 6px; background: var(--color-line, #e5e5e7); } .ds-tab.ds-active { color: var(--color-accent, #0071e3); } .ds-tab.ds-active .ds-tab-icon { background: var(--color-accent, #0071e3); } .ds-tab:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; border-radius: 6px; }"
+    },
+    {
+      "name": "Build FAB",
+      "kind": "custom",
+      "refersTo": "fab",
+      "description": "首页唯一的悬浮元素：52×52 圆形 + 信号蓝色调阴影。系统里仅有的两处阴影之一。",
+      "html": "<button class=\"ds-fab\" aria-label=\"建卡\">+</button>",
+      "css": ".ds-fab { display: grid; place-items: center; width: 52px; height: 52px; border: none; border-radius: 999px; background: var(--color-accent, #0071e3); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 30px; line-height: 1; box-shadow: 0 10px 15px -3px rgba(0, 113, 227, 0.35), 0 4px 6px -4px rgba(0, 113, 227, 0.35); cursor: pointer; transition: background-color 150ms; } .ds-fab:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 88%, #000); } .ds-fab:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Pocket Card Box",
+    "overview": "Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系统的重心：卡片是主角，翻面是唯一需要被看见的动作，卡盒本身要安静到可以被忽略。所以界面几乎没有装饰——没有渐变、没有插画、没有第二强调色，深度靠背景色层级而不是阴影，层级靠字号与字重而不是色彩。留白与间距承担了大部分\"设计\"，剩下的交给内容：一个单词、一条释义、一句带挖空的例句。\n\n它是 iOS 原生应用的外壳里装着一个私人工具：系统字体栈、发丝分隔线、14 的卡片圆角、单一信号蓝。中文用 PingFang SC，英文用系统 SF，字体本身不参与表达。这套克制是为了让每天重复 20 次的动作不产生摩擦——复习屏不抢戏，建卡屏不提问，设置页不解释自己。\n\n密度上偏松：一屏只做一件事，复习屏整屏只有一张卡，设置页按分组堆叠，卡片列表一次只给一行一条记录。颜色总量刻意压低，唯一的彩色事件是四档打分（记忆薄涂）与挖空高亮；它们一出现，用户就知道自己在\"评分\"或\"看答案\"。",
+    "keyCharacteristics": [
+      "卡片优先：卡片是唯一有边界的容器，其他内容靠留白与发丝线归组。",
+      "扁平但有层次：bg / panel 两档底色 + 1px 发丝线，不用卡片阴影。",
+      "单强调色：信号蓝只出现在可操作项与\"新\"的地方；语义四色只属于打分。",
+      "系统字体栈，层级靠字号与字重（400 / 600 / 700）拉开。",
+      "手机单手：单列 448px 上限、可点目标 ≥ 44pt、安全区内边距。",
+      "动效近乎为零：只有颜色过渡与开关滑动，翻面是瞬时的。"
+    ],
+    "rules": [
+      {
+        "name": "The One Blue Rule",
+        "body": "信号蓝在任一屏上的覆盖面积不超过 10%，且只允许出现在可操作项、\"新\"数据、当前选中态三处。它的稀有就是它的力量。",
+        "section": "colors"
+      },
+      {
+        "name": "The Memory Tint Rule",
+        "body": "四档打分色只属于打分按钮与它的徽标（草稿状态徽标、卡型小标签、完成/歇脚图标）。两处既有例外要保留：good-fg 也用于开关打开态，easy-bg 也用于发音按钮与次要按钮。除此之外，打分色不得外溢到卡片、列表行或正文。",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Gradient Rule",
+        "body": "不用渐变、不用第二强调色、不用彩色插画。需要区分层级时，用底色两档差 + 发丝线，不用色彩。",
+        "section": "colors"
+      },
+      {
+        "name": "The Size-Not-Color Rule",
+        "body": "层级由字号与字重建立；颜色只表达状态（可操作、次要、警示、评分档位）。把一段正文变灰只能因为它确实次要，不能为了让标题更突出。",
+        "section": "typography"
+      },
+      {
+        "name": "The 16px Input Rule",
+        "body": "所有输入框、文本域、搜索框的字号 ≥ 16px。低于这个值 iOS Safari 会在聚焦时缩放页面，任何\"更精致的小字输入框\"都不成立。",
+        "section": "typography"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "任何屏幕都是一列。不允许为了利用桌面宽度引入双栏或侧边栏；宽度只影响留白，不影响结构。",
+        "section": "layout"
+      },
+      {
+        "name": "The Thumb Zone Rule",
+        "body": "主操作永远在底部：翻面、四档打分、保存、继续/今天到这。顶部只放低频或退出的动作（关闭、撤销、编辑、设置）。",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "静止状态下的表面一律扁平。阴影是\"浮起来\"的证据，不是\"重要\"的装饰；除 FAB 与浮动提示外，任何卡片、按钮、输入框出现阴影都算错误。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Three-Radius Rule",
+        "body": "14 / 12 / 10，加一个 pill。新组件必须选其中一个，不允许出现 8、16、20 或任意中间值。",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do 用 Cool Paper / Card White 两档底色差加 1px Hairline 建立分组，这是系统的唯一深度手段。",
+      "Do 把主操作放在底部拇指区（翻面、评分、保存、继续），并保证高度 ≥ 44pt。",
+      "Do 用 30px/700 或 34px/700 承载\"现在该做什么\"，一屏只留一个这样的焦点。",
+      "Do 给所有输入框 16px 以上字号，所有页面加 min-h-dvh 与 env(safe-area-inset-*)。",
+      "Do 用 Signal Blue 只标记可操作项、\"新\"数据与当前选中态；其余状态用雾灰与发丝线。",
+      "Do 保留四档打分与挖空高亮作为界面里唯一的彩色事件。"
+    ],
+    "donts": [
+      "Don't 给卡片、按钮、输入框加阴影——阴影只属于 FAB 与浮动提示条。",
+      "Don't 引入第二强调色、渐变、彩色插画或图标字体；需要区分时用底色层级与字号。",
+      "Don't 用纯色大块做评分按钮，也不要让 Memory Tints 溢出到卡片或正文。",
+      "Don't 发明第四个圆角值（只用 14 / 12 / 10 / pill）。",
+      "Don't 加 3D 翻面、弹跳、骨架屏或页面切换动画；状态过渡只有 150ms 的颜色变化与开关滑动。",
+      "Don't 为桌面加双栏、侧边栏或放大字号——窗口变宽只增加留白。",
+      "Don't 把提醒条做成错误：温和提醒用 Caution Paper（便签感），只有真正的失败才用 again-fg 文字。"
+    ]
+  }
+}
