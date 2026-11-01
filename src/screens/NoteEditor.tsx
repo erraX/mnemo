@@ -2,8 +2,8 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { db } from '@/db/db'
-import { allTags, createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, updateNote } from '@/db/repo'
-import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type Note } from '@/domain/types'
+import { allTags, createNote, deleteNote, findDuplicate, getSettings, planNoteUpdate, previewNoteDeletion, updateNote } from '@/db/repo'
+import { CARD_TYPES, CARD_TYPE_LABEL, DEFAULT_SETTINGS, type CardType, type Note } from '@/domain/types'
 import { tokenize } from '@/lib/cloze'
 import { lookupWord } from '@/lib/dict'
 import { canSave, formAvailability, initialForm, reduceForm, saveLabel, toNoteInput } from '@/lib/noteForm'
@@ -11,12 +11,22 @@ import { useAudio } from '@/app/useAudio'
 import { ClozeEditor } from '@/components/ClozeEditor'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { ConfirmSheet } from '@/components/ui/ConfirmSheet'
 import { Field } from '@/components/ui/Field'
 import { SheetHeader } from '@/components/ui/SheetHeader'
 
 export const LOOKUP_DEBOUNCE_MS = 300
 
 const inputCls = 'w-full bg-transparent text-base outline-none placeholder:text-muted'
+
+/** 只比"填了什么"：卡型勾选不拿来判脏，它的删除另有确认 */
+function contentKey(f: { headword: string; phonetic?: string; meaning: string; examples: Array<{ text: string }>; tags: string | string[] }): string {
+  const tags = (Array.isArray(f.tags) ? f.tags : f.tags.split(/[,，\s]+/)).map((t) => t.trim()).filter(Boolean)
+  return JSON.stringify([
+    f.headword.trim(), (f.phonetic ?? '').trim(), f.meaning.trim(), tags,
+    f.examples.map((e) => e.text.trim()).filter(Boolean),
+  ])
+}
 
 /** 按 id 和草稿重建编辑器：/note/new ↔ /note/:id、换草稿、/note/A → /note/B 之间不共用表单状态 */
 export function NoteEditorRoute() {
@@ -47,6 +57,10 @@ export function NoteEditor() {
   const [duplicate, setDuplicate] = useState<Note | undefined>(undefined)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
+  // 三张确认面板共用一次渲染：离开未保存的表单、关闭卡型、删除记录
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const [pendingTypeDelete, setPendingTypeDelete] = useState<{ types: CardType[]; cards: number; logs: number } | undefined>(undefined)
+  const [pendingDelete, setPendingDelete] = useState<{ cards: number; logs: number } | undefined>(undefined)
   // 编辑模式下词头未改动前不查词典：否则每次打开都显示“已补全”/“改为原形”，误导用户
   const [headwordDirty, setHeadwordDirty] = useState(false)
   const lookupEnabled = mode === 'new' || headwordDirty
@@ -89,9 +103,13 @@ export function NoteEditor() {
   const availability = formAvailability(form)
   // 有来路就回上一屏（复习 / 卡片列表）；直接打开的页面 location.key 是 'default'，回首页
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/', { replace: true }))
+  // 取消是 sticky 头部最左一格，正是拇指误触的落点：改过内容就先问一句，不直接丢
+  const initialKey = contentKey(mode === 'edit' && note ? note : initialForm(DEFAULT_SETTINGS.lastEnabledTypes))
+  const dirty = contentKey(form) !== initialKey
+  const requestClose = () => { if (dirty) setConfirmLeave(true); else goBack() }
   const failureMessage = (e: unknown) => `操作失败：${e instanceof Error ? e.message : String(e)}`
 
-  async function save() {
+  async function save(confirmed: CardType[] = []) {
     if (!canSave(form) || saving) return
     setSaving(true)
     setError(undefined)
@@ -101,9 +119,10 @@ export function NoteEditor() {
         await createNote(db, input, Date.now(), undefined, { draftId })
       } else if (id) {
         const plan = await planNoteUpdate(db, id, input)
-        if (plan.toDelete.length > 0) {
-          const names = plan.toDelete.map((t) => CARD_TYPE_LABEL[t]).join('、')
-          if (!window.confirm(`将删除「${names}」卡片及其复习记录，确定吗？`)) return
+        if (plan.toDelete.some((t) => !confirmed.includes(t))) {
+          const impact = await previewNoteDeletion(db, id, plan.toDelete)
+          setPendingTypeDelete({ types: plan.toDelete, cards: impact.cards, logs: impact.logs })
+          return
         }
         await updateNote(db, id, input, Date.now(), undefined, plan.toDelete)
       }
@@ -116,15 +135,28 @@ export function NoteEditor() {
     }
   }
 
+  async function requestRemove() {
+    if (!id) return
+    setError(undefined)
+    try {
+      setPendingDelete(await previewNoteDeletion(db, id))
+    } catch (e) {
+      setError(failureMessage(e))
+    }
+  }
+
   async function remove() {
     if (!id) return
-    if (!window.confirm('删除这条记录和它的全部卡片、复习记录？')) return
+    setSaving(true)
     setError(undefined)
     try {
       await deleteNote(db, id)
       goBack()
     } catch (e) {
       setError(failureMessage(e))
+    } finally {
+      setSaving(false)
+      setPendingDelete(undefined)
     }
   }
 
@@ -143,7 +175,7 @@ export function NoteEditor() {
     return (
       <div className="grid min-h-dvh place-items-center p-6 text-center">
         <div>
-          <div className="text-xl font-semibold">记录不存在</div>
+          <div className="text-[22px] font-bold leading-tight">记录不存在</div>
           <Button variant="secondary" className="mt-4" onClick={goBack}>返回</Button>
         </div>
       </div>
@@ -154,7 +186,7 @@ export function NoteEditor() {
     <div className="min-h-dvh bg-bg pb-10">
       <SheetHeader
         title={mode === 'new' ? '新卡片' : '编辑'}
-        onCancel={goBack}
+        onCancel={requestClose}
         action={{ label: '保存', onClick: () => void save(), disabled: !canSave(form) || saving }}
       />
       <div className="mx-auto flex max-w-md flex-col gap-2 p-3">
@@ -162,7 +194,7 @@ export function NoteEditor() {
           <input
             ref={headwordRef}
             aria-label="单词 / 短语"
-            className={`${inputCls} text-xl font-semibold`}
+            className={`${inputCls} text-[22px] font-bold`}
             value={form.headword}
             autoCapitalize="none"
             autoCorrect="off"
@@ -174,7 +206,7 @@ export function NoteEditor() {
               <p className="leading-8">
                 {tokenize(form.examples[0].text).map((t, i) =>
                   t.isWord ? (
-                    <button key={i} type="button" aria-label={`选 ${t.text}`} className="rounded-sm px-0.5 underline decoration-dotted underline-offset-4" onClick={() => { setHeadwordDirty(true); dispatch({ type: 'pickHeadword', word: t.text }) }}>
+                    <button key={i} type="button" aria-label={`选 ${t.text}`} className="rounded-full px-1 underline decoration-dotted underline-offset-4" onClick={() => { setHeadwordDirty(true); dispatch({ type: 'pickHeadword', word: t.text }) }}>
                       {t.text}
                     </button>
                   ) : <span key={i}>{t.text}</span>,
@@ -197,7 +229,7 @@ export function NoteEditor() {
         <Field label="音标">
           <div className="flex items-center gap-2">
             <input aria-label="音标" className={inputCls} value={form.phonetic} placeholder="短语可留空" onChange={(e) => dispatch({ type: 'phonetic', value: e.target.value })} />
-            <button type="button" aria-label="播放发音" className="grid h-8 w-8 place-items-center rounded-full bg-easy-bg text-accent" disabled={!form.headword.trim()} onClick={() => void audio.play(form.headword.trim())}>▶</button>
+            <button type="button" aria-label="播放发音" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-easy-bg text-accent" disabled={!form.headword.trim()} onClick={() => void audio.play(form.headword.trim())}>▶</button>
           </div>
         </Field>
 
@@ -258,9 +290,52 @@ export function NoteEditor() {
         {error && <p role="alert" className="text-xs text-again-fg">{error}</p>}
 
         {mode === 'edit' && (
-          <Button variant="ghost" className="mt-4 text-again-fg" onClick={() => void remove()}>删除这条记录</Button>
+          <Button variant="ghost" className="mt-4 text-again-fg" onClick={() => void requestRemove()}>删除这条记录</Button>
         )}
       </div>
+
+      {confirmLeave && (
+        <ConfirmSheet
+          title="这条卡还没保存"
+          message="离开会丢掉已经填好的单词、释义和例句。"
+          safeLabel="继续编辑"
+          dangerLabel="放弃修改"
+          onSafe={() => setConfirmLeave(false)}
+          onDanger={goBack}
+        />
+      )}
+
+      {pendingTypeDelete && (
+        <ConfirmSheet
+          title="关闭卡型会删掉复习记录"
+          lines={[
+            `关闭 ${pendingTypeDelete.types.map((t) => CARD_TYPE_LABEL[t]).join('、')}`,
+            `${pendingTypeDelete.cards} 张卡 · ${pendingTypeDelete.logs} 条复习记录`,
+          ]}
+          message="这些复习进度会永久删除，不可撤销；单词和例句保留。"
+          safeLabel="继续编辑"
+          dangerLabel="关闭并保存"
+          busy={saving}
+          onSafe={() => setPendingTypeDelete(undefined)}
+          onDanger={() => { const types = pendingTypeDelete.types; setPendingTypeDelete(undefined); void save(types) }}
+        />
+      )}
+
+      {pendingDelete && (
+        <ConfirmSheet
+          title="删除这条记录"
+          lines={[
+            `「${form.headword.trim() || '这条记录'}」及其 ${pendingDelete.cards} 张卡`,
+            `${pendingDelete.logs} 条复习记录`,
+          ]}
+          message="这些都一起删掉，不能撤销。"
+          safeLabel="保留"
+          dangerLabel="确认删除"
+          busy={saving}
+          onSafe={() => setPendingDelete(undefined)}
+          onDanger={() => void remove()}
+        />
+      )}
     </div>
   )
 }

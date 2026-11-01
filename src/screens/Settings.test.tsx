@@ -68,10 +68,14 @@ describe('Settings', () => {
     await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
     const file = backupToFile(await exportBackup(db))
     await db.delete(); await db.open()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
     const input = (await screen.findByLabelText('从文件恢复')) as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
+    // 选完文件只选不算：先摊开影响面，确认之后才写库
+    expect(await screen.findByText('备份包含 1 条记录')).toBeTruthy()
+    expect(await screen.findByText(/导出于 20\d\d 年/)).toBeTruthy()
+    expect(await db.notes.count()).toBe(0)
+    fireEvent.click(screen.getByRole('button', { name: '覆盖并恢复' }))
     await waitFor(async () => expect(await db.notes.count()).toBe(1))
     expect(await screen.findByText('已恢复 1 条记录')).toBeTruthy()
 
@@ -82,11 +86,11 @@ describe('Settings', () => {
   it('restore shows a friendly message when the import itself fails, keeps the JSON-parse message, and is disabled while busy', async () => {
     await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
     const file = backupToFile(await exportBackup(db))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.spyOn(backup, 'importBackup').mockRejectedValueOnce(new Error('DataError: Failed to execute add on IDBObjectStore'))
     renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
     const input = (await screen.findByLabelText('从文件恢复')) as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
+    fireEvent.click(await screen.findByRole('button', { name: '覆盖并恢复' }))
     expect(await screen.findByText('恢复失败，请重试')).toBeTruthy()
 
     fireEvent.change(input, { target: { files: [new File(['not json'], 'x.json', { type: 'application/json' })] } })
@@ -95,6 +99,7 @@ describe('Settings', () => {
     let release: () => void = () => undefined
     vi.spyOn(backup, 'importBackup').mockImplementationOnce(() => new Promise<void>((r) => { release = r }))
     fireEvent.change(input, { target: { files: [file] } })
+    fireEvent.click(await screen.findByRole('button', { name: '覆盖并恢复' }))
     await waitFor(() => expect(input.disabled).toBe(true))
     expect(screen.getByRole('button', { name: /备份到文件/ })).toBeDisabled()
     release()

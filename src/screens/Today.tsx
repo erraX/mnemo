@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { db } from '@/db/db'
 import { getSettings, getTodayCounts } from '@/db/repo'
 import { OriginBanner } from '@/components/OriginBanner'
+import { Button } from '@/components/ui/Button'
 import { useVisibilityTick } from '@/app/useVisibilityTick'
 import type { DictLoadState } from '@/app/useDictLoader'
 import type { Settings } from '@/domain/types'
@@ -30,6 +31,7 @@ export function Today({ dict }: { dict: DictLoadState }) {
   const noteCount = useLiveQuery(() => db.notes.count(), [], 0)
   const backupNudge = backupNudgeText(settings, noteCount)
   const total = counts.due + counts.fresh
+  const coldStart = noteCount === 0 && drafts === 0
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-3 px-4 pb-28" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
@@ -39,36 +41,35 @@ export function Today({ dict }: { dict: DictLoadState }) {
         <p className="text-sm text-muted">{todayLabel()}</p>
       </header>
 
-      <section className="rounded-(--radius-card) bg-panel p-4">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <div className="text-[34px] font-bold leading-none tracking-tight">{counts.due}</div>
-            <div className="mt-1 text-xs text-muted">待复习</div>
-          </div>
-          <div className="flex-1">
-            <div className="text-[34px] font-bold leading-none tracking-tight text-accent">{counts.fresh}</div>
-            <div className="mt-1 text-xs text-muted">新卡</div>
-          </div>
-        </div>
-        <button
-          className="mt-4 h-[50px] w-full rounded-(--radius-card) bg-accent text-base font-semibold text-white disabled:opacity-40"
-          disabled={total === 0}
-          onClick={() => navigate('/review')}
-        >
-          {total === 0 ? '今天没有要复习的' : '开始复习'}
-        </button>
-      </section>
+      {coldStart ? (
+        <section className="rounded-(--radius-card) bg-panel p-4">
+          <h2 className="text-[22px] font-bold leading-tight">还没有词</h2>
+          <p className="mt-1 text-[15px] leading-normal text-muted">从 Mac 复制一句原文，粘进来就能建卡；粘一个词也行。</p>
+          <Button size="lg" className="mt-4 w-full" onClick={() => navigate('/inbox')}>粘贴到收集箱</Button>
+        </section>
+      ) : (
+        <>
+          <section className="rounded-(--radius-card) bg-panel p-4">
+            <p className="flex items-baseline gap-1">
+              <span className="text-[34px] font-bold leading-none tracking-tight">{counts.due}</span>
+              <span className="text-[15px] text-muted">张待复习{counts.fresh > 0 ? ` · ${counts.fresh} 张新卡` : ''}</span>
+            </p>
+            {total === 0 ? (
+              <p className="mt-3 text-[15px] leading-normal text-muted">今天没有要复习的 · 每天 04:00 之后算新的一天。</p>
+            ) : (
+              <Button size="lg" className="mt-4 w-full" onClick={() => navigate('/review')}>开始复习</Button>
+            )}
+          </section>
 
-      <Link to="/inbox" className="flex items-center justify-between rounded-(--radius-card) bg-panel px-4 py-3">
-        <div>
-          <div className="text-[15px]">收集箱</div>
-          <div className="text-xs text-muted">{drafts > 0 ? `${drafts} 条待处理` : '没有待处理的'}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          {drafts > 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] text-white">{drafts}</span>}
-          <span className="text-lg text-line">›</span>
-        </div>
-      </Link>
+          <Link to="/inbox" className="flex items-center justify-between gap-3 rounded-(--radius-card) bg-panel px-4 py-3">
+            <div className="min-w-0">
+              <div className="text-[15px]">收集箱</div>
+              <div className="text-xs text-muted">{drafts > 0 ? `${drafts} 条待处理` : '粘贴单词或整句，逐条建卡'}</div>
+            </div>
+            <span className="shrink-0 text-[15px] font-semibold text-accent">{drafts > 0 ? `去建卡 · ${drafts}` : '粘贴'}</span>
+          </Link>
+        </>
+      )}
 
       {backupNudge && (
         <Link to="/settings" className="flex items-center justify-between rounded-(--radius-field) border border-notice-line bg-notice-bg px-3 py-2 text-xs text-notice-fg">
@@ -80,12 +81,9 @@ export function Today({ dict }: { dict: DictLoadState }) {
       {dict.state === 'loading' && (
         <p className="text-xs text-muted">正在准备词典… {dict.total ? `${dict.done} / ${dict.total}` : ''}</p>
       )}
-      {dict.state === 'ready' && dict.entries ? (
-        <p className="text-xs text-muted">词典已就绪：{dict.entries} 条，用时 {dict.ms} ms（下载 {dict.fetchMs} / 写入 {dict.writeMs}）</p>
-      ) : null}
-      {dict.state === 'error' && <p className="text-xs text-again-fg">词典加载失败：{dict.error}</p>}
-
-      <div className="mt-auto pb-2 text-center text-[11px] text-muted">共 {noteCount} 条记录</div>
+      {dict.state === 'error' && (
+        <p className="text-xs text-again-fg">词典没准备好，建卡时不会自动补全释义 · 刷新页面重试</p>
+      )}
 
       <Link
         to="/note/new"

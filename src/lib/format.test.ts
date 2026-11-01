@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dueLabel, minutesBetween } from './format'
+import { dueLabel, formatCnDateTime, minutesBetween } from './format'
 
 const local = (y: number, m: number, d: number, h: number) => new Date(y, m - 1, d, h).getTime()
 const NOW = local(2026, 10, 31, 10)
@@ -27,6 +27,13 @@ describe('minutesBetween', () => {
 
 import type { Card } from '@/domain/types'
 import { noteDueSummary } from './format'
+
+describe('formatCnDateTime', () => {
+  it('reads as Chinese instead of the locale default', () => {
+    expect(formatCnDateTime(local(2026, 10, 30, 14))).toBe('2026 年 10 月 30 日 14:00')
+    expect(formatCnDateTime(new Date(2026, 0, 5, 9, 5).getTime())).toBe('2026 年 1 月 5 日 09:05')
+  })
+})
 
 describe('noteDueSummary', () => {
   const card = (p: Partial<Card>): Card => ({

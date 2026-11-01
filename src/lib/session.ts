@@ -1,4 +1,5 @@
 import type { Card } from '@/domain/types'
+import { learningDayStart } from './day'
 
 export const BREATHER_EVERY = 20
 
@@ -55,4 +56,39 @@ export function afterUndo(s: SessionState, { wasNew, queue, restoredId }: { wasN
 
 export function elapsedMinutes(s: SessionState, now: number): number {
   return Math.max(1, Math.round((now - s.stats.startedAt) / 60_000))
+}
+
+/** 学习时长只算页面在前台的时间：切到别的 app、锁屏、开着标签页去吃午饭都不算 */
+export function activeMinutes(startedAt: number, idleMs: number, now: number): number {
+  return Math.max(1, Math.round(Math.max(0, now - startedAt - idleMs) / 60_000))
+}
+
+export const SESSION_MEMORY_KEY = 'mnemo:review-progress'
+
+export interface SessionMemory {
+  dayStart: number
+  /** 距离上一次歇脚页已经打过几张：从复习屏点「编辑」再回来不清零 */
+  sinceBreather: number
+  startedAt: number
+}
+
+/** 只认同一个学习日的记忆；跨天、损坏、旧格式一律当没有 */
+export function readSessionMemory(raw: string | null, now: number): SessionMemory | undefined {
+  if (!raw) return undefined
+  try {
+    const m = JSON.parse(raw) as Partial<SessionMemory>
+    if (typeof m.dayStart !== 'number' || typeof m.sinceBreather !== 'number' || typeof m.startedAt !== 'number') return undefined
+    if (m.dayStart !== learningDayStart(now)) return undefined
+    return { dayStart: m.dayStart, sinceBreather: Math.max(0, m.sinceBreather), startedAt: m.startedAt }
+  } catch {
+    return undefined
+  }
+}
+
+export function writeSessionMemory(s: SessionState): string {
+  return JSON.stringify({
+    dayStart: learningDayStart(s.stats.startedAt),
+    sinceBreather: s.sinceBreather,
+    startedAt: s.stats.startedAt,
+  } satisfies SessionMemory)
 }

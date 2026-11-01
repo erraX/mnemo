@@ -5,12 +5,15 @@ import { db } from '@/db/db'
 import { createNote, gradeCard } from '@/db/repo'
 import * as repo from '@/db/repo'
 import { renderWithRouter } from '@/test/render'
+import { SESSION_MEMORY_KEY, BREATHER_EVERY } from '@/lib/session'
+import { learningDayStart } from '@/lib/day'
 import { Review } from './Review'
 
 const play = vi.fn(async () => 'youdao' as const)
 vi.mock('@/app/useAudio', () => ({ useAudio: () => ({ accent: 'us', play, prefetch: vi.fn(async () => undefined) }) }))
 
-beforeEach(async () => { await db.delete(); await db.open(); play.mockClear() })
+// 20 张节奏存在 sessionStorage 里（跨「编辑」往返保留），同一文件的用例之间要清掉
+beforeEach(async () => { await db.delete(); await db.open(); sessionStorage.clear(); play.mockClear() })
 afterEach(() => vi.restoreAllMocks())
 
 describe('Review', () => {
@@ -42,6 +45,34 @@ describe('Review', () => {
     await screen.findByRole('button', { name: /简单/ })
     expect(play).toHaveBeenCalledTimes(2)
     expect(play).toHaveBeenLastCalledWith('concern')
+  })
+
+  it('reveals with Enter and grades with 1–4 on the keyboard', async () => {
+    await createNote(db, { headword: 'concern', meaning: 'n. 担忧', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    await screen.findByRole('button', { name: '看答案' })
+    fireEvent.keyDown(window, { key: 'Enter' })
+    await screen.findByRole('button', { name: /简单/ })
+    fireEvent.keyDown(window, { key: '4' })
+    await screen.findByText('今天的复习完成了')
+    const [log] = await db.reviewLogs.toArray()
+    expect(log?.rating).toBe(4)
+  })
+
+  it('keeps the 20-card rhythm across an edit round-trip', async () => {
+    for (const headword of ['concern', 'other', 'third']) {
+      await createNote(db, { headword, meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
+    }
+    // 本学习日已经打了 19 张，刚点过「编辑」离开复习屏；回来时不该从 0 重新数
+    sessionStorage.setItem(SESSION_MEMORY_KEY, JSON.stringify({
+      dayStart: learningDayStart(Date.now()), sinceBreather: BREATHER_EVERY - 1, startedAt: Date.now() - 60_000,
+    }))
+    renderWithRouter(<Review />, { route: '/review', path: '/review' })
+    fireEvent.click(await screen.findByRole('button', { name: '看答案' }))
+    fireEvent.click(await screen.findByRole('button', { name: /简单/ }))
+    // 第 20 张之后落到歇脚页，说明回来时没有把节奏清零
+    expect(await screen.findByRole('button', { name: '今天到这' })).toBeTruthy()
+    expect(sessionStorage.getItem(SESSION_MEMORY_KEY)).toContain('"sinceBreather":0')
   })
 
   it('undo restores the card and the counter', async () => {

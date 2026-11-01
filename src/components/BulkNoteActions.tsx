@@ -4,6 +4,7 @@ import { db } from '@/db/db'
 import { applyBulkNotes, planBulkNotes, type BulkAction, type BulkPlan, type BulkSummary, type TypeChanges } from '@/db/bulkNotes'
 import { CARD_TYPES, CARD_TYPE_LABEL } from '@/domain/types'
 import { Button } from '@/components/ui/Button'
+import { ConfirmSheet } from '@/components/ui/ConfirmSheet'
 
 interface Props {
   noteIds: string[]
@@ -78,7 +79,7 @@ export function BulkNoteActions({ noteIds, disabled, onBusyChange, onComplete }:
           {CARD_TYPES.map((type) => (
             <label key={type} className="flex items-center justify-between gap-3 text-sm">
               {CARD_TYPE_LABEL[type]}
-              <select aria-label={`${CARD_TYPE_LABEL[type]}操作`} className="min-h-11 rounded-lg border border-line bg-bg px-3"
+              <select aria-label={`${CARD_TYPE_LABEL[type]}操作`} className="min-h-11 rounded-(--radius-field) border border-line bg-bg px-3"
                 value={changes[type]} onChange={(e) => {
                   setChanges({ ...changes, [type]: e.target.value })
                   setPlan(undefined)
@@ -96,9 +97,24 @@ export function BulkNoteActions({ noteIds, disabled, onBusyChange, onComplete }:
       )}
       {busy && <p role="status" className="text-sm text-muted">正在处理，请稍候…</p>}
       {error && <p role="alert" className="text-sm text-again-fg">{error}</p>}
-      {plan && (
-        <section aria-label="批量操作预览" tabIndex={-1} ref={previewRef} className="flex flex-col gap-2 rounded-lg border border-notice-line bg-notice-bg p-3">
-          <h2 className="font-semibold">{plan.action.kind === 'delete' ? '删除单词预览' : '卡型修改预览'}</h2>
+      {plan && plan.action.kind === 'delete' && (
+        <ConfirmSheet
+          title="删除单词预览"
+          lines={[
+            `涉及 ${plan.summary.notes} 个单词`,
+            `删除 ${plan.summary.deletedCards} 张卡 · ${plan.summary.deletedLogs} 条复习记录`,
+          ]}
+          message="这些单词及其全部卡片、复习记录将永久删除，不可撤销。建议先到设置 → 备份到文件 导出一份。"
+          safeLabel="取消操作"
+          dangerLabel={`确认删除 ${plan.summary.notes} 个单词`}
+          busy={locked}
+          onSafe={() => setPlan(undefined)}
+          onDanger={() => void confirm()}
+        />
+      )}
+      {plan && plan.action.kind === 'types' && (
+        <section aria-label="批量操作预览" tabIndex={-1} ref={previewRef} className="flex flex-col gap-2 rounded-(--radius-field) border border-notice-line bg-notice-bg p-3">
+          <h2 className="font-semibold">卡型修改预览</h2>
           <p className="text-sm">涉及 {plan.summary.notes} 个单词</p>
           {typePlan && (
             <>
@@ -106,16 +122,14 @@ export function BulkNoteActions({ noteIds, disabled, onBusyChange, onComplete }:
                 `${CARD_TYPE_LABEL[type]}：${typePlan.changes[type] === 'enable' ? '启用' : '关闭'}`,
               ).join('；')}</p>
               <p className="text-sm">新增 {plan.summary.createdCards} 张卡</p>
+              <p className="text-sm">删除 {plan.summary.deletedCards} 张卡 · {plan.summary.deletedLogs} 条复习记录</p>
               {plan.summary.skippedCards > 0 && <p className="text-xs text-muted">{plan.summary.skippedCards} 张卡因缺少例句挖空等必要内容，无法启用，将跳过。</p>}
             </>
           )}
-          <p className="text-sm">删除 {plan.summary.deletedCards} 张卡 · {plan.summary.deletedLogs} 条复习记录</p>
-          <p className="text-sm text-notice-fg">{plan.action.kind === 'delete'
-            ? '这些单词及其全部卡片、复习记录将永久删除，不可撤销。'
-            : '单词和例句会保留，即使关闭所有卡型。被关闭卡片的复习进度将永久删除，不可撤销。'}</p>
+          <p className="text-sm text-notice-fg">单词和例句会保留，即使关闭所有卡型。被关闭卡片的复习进度将永久删除，不可撤销。</p>
           <p className="text-xs text-notice-fg">建议先到<Link to="/settings" className="underline" aria-disabled={locked} tabIndex={locked ? -1 : undefined} onClick={(e) => { if (locked) e.preventDefault() }}>设置导出备份</Link>。</p>
-          <Button disabled={locked || plan.summary.notes === 0} className={plan.action.kind === 'delete' ? 'bg-again-fg' : ''} onClick={() => void confirm()}>
-            {plan.action.kind === 'delete' ? `确认删除 ${plan.summary.notes} 个单词` : '确认修改卡片类型'}
+          <Button disabled={locked || plan.summary.notes === 0} onClick={() => void confirm()}>
+            确认修改卡片类型
           </Button>
           <Button variant="ghost" disabled={locked} onClick={() => setPlan(undefined)}>取消操作</Button>
         </section>

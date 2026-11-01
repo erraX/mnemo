@@ -1,15 +1,16 @@
 import { NavLink } from 'react-router'
+import { TabIcon } from './ui/TabIcon'
 
 const tabs = [
-  { to: '/', label: '今日' },
-  { to: '/cards', label: '卡片' },
-  { to: '/settings', label: '设置' },
-]
+  { to: '/', label: '今日', icon: 'today' },
+  { to: '/cards', label: '卡片', icon: 'cards' },
+  { to: '/settings', label: '设置', icon: 'settings' },
+] as const
 
 export function TabBar() {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 flex justify-around border-t border-line bg-panel/95 pt-2 text-[10px] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 flex justify-around border-t border-line bg-panel/95 text-[10px] backdrop-blur"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
     >
       {tabs.map((t) => (
@@ -17,12 +18,12 @@ export function TabBar() {
           key={t.to}
           to={t.to}
           end={t.to === '/'}
-          className={({ isActive }) => `flex w-16 flex-col items-center gap-1 ${isActive ? 'text-accent' : 'text-muted'}`}
+          className={({ isActive }) => `flex min-h-14 w-16 flex-col items-center justify-center gap-1 ${isActive ? 'text-accent' : 'text-muted'}`}
         >
           {({ isActive }) => (
             <>
-              <span className={`block h-6 w-6 rounded-md ${isActive ? 'bg-accent' : 'bg-line'}`} />
-              {t.label}
+              <TabIcon name={t.icon} className={isActive ? 'text-accent' : 'text-muted'} />
+              <span className={isActive ? 'font-semibold' : ''}>{t.label}</span>
             </>
           )}
         </NavLink>

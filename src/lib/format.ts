@@ -28,3 +28,10 @@ export function dueLabel(due: number, state: FsrsState, now: number): string {
   if (dayDiff < 60) return `${dayDiff} 天后`
   return `${Math.round(dayDiff / 30)} 个月后`
 }
+
+/** 中文的日期时间：2026 年 10 月 30 日 14:03（不用 toLocaleString 的地区格式） */
+export function formatCnDateTime(ts: number): string {
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}

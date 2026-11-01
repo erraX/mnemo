@@ -7,6 +7,7 @@ import type { Draft } from '@/domain/types'
 import { lookupWord } from '@/lib/dict'
 import { splitPaste } from '@/lib/inbox'
 import { Button } from '@/components/ui/Button'
+import { ConfirmSheet } from '@/components/ui/ConfirmSheet'
 import { SheetHeader } from '@/components/ui/SheetHeader'
 
 type DictStatus = 'hit' | 'miss'
@@ -30,6 +31,8 @@ export function Inbox() {
   const [text, setText] = useState('')
   const [dict, setDict] = useState<Record<string, DictStatus>>({})
   const [error, setError] = useState<string | undefined>(undefined)
+  const [pendingDelete, setPendingDelete] = useState<Draft | undefined>(undefined)
+  const [deleting, setDeleting] = useState(false)
 
   // 后台查词典：只查还没结果的 headword 草稿
   useEffect(() => {
@@ -60,8 +63,13 @@ export function Inbox() {
   }
 
   async function remove(d: Draft) {
-    if (!window.confirm(`删除草稿「${d.raw}」？`)) return
-    await deleteDraft(db, d.id)
+    setDeleting(true)
+    try {
+      await deleteDraft(db, d.id)
+    } finally {
+      setDeleting(false)
+      setPendingDelete(undefined)
+    }
   }
 
   return (
@@ -94,13 +102,26 @@ export function Inbox() {
                     <div className="text-xs text-muted">{statusLine(d, dict[d.id])}</div>
                   </Link>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${b.cls}`}>{b.text}</span>
-                  <button type="button" aria-label={`删除 ${d.raw}`} className="shrink-0 px-1 text-muted" onClick={() => void remove(d)}>✕</button>
+                  <button type="button" aria-label={`删除 ${d.raw}`} className="grid h-11 w-11 shrink-0 place-items-center text-muted" onClick={() => setPendingDelete(d)}>✕</button>
                 </li>
               )
             })}
           </ul>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmSheet
+          title="删除草稿"
+          lines={[`「${pendingDelete.raw}」`]}
+          message="草稿删掉就没了；已经建好的卡不受影响。"
+          safeLabel="保留"
+          dangerLabel="删除草稿"
+          busy={deleting}
+          onSafe={() => setPendingDelete(undefined)}
+          onDanger={() => void remove(pendingDelete)}
+        />
+      )}
     </div>
   )
 }

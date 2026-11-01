@@ -16,10 +16,10 @@ export function GradeBar({ labels, onGrade, disabled = false }: { labels: Record
           type="button"
           disabled={disabled}
           onClick={() => onGrade(b.rating)}
-          className={`flex h-[52px] flex-col items-center justify-center rounded-xl text-[13px] font-semibold disabled:opacity-40 ${b.cls}`}
+          className={`flex h-[52px] flex-col items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-40 ${b.cls}`}
         >
           <span>{b.label}</span>
-          <span className="text-[10px] font-normal opacity-75">{labels[b.rating]}</span>
+          <span className="text-[10px] font-normal">{labels[b.rating]}</span>
         </button>
       ))}
     </div>

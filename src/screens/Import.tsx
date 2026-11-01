@@ -18,6 +18,7 @@ export function Import() {
   const [error, setError] = useState<string | undefined>()
   const [result, setResult] = useState<string | undefined>()
   const working = useRef(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const alive = useRef(false)
   const generation = useRef(0)
   useEffect(() => {
@@ -81,7 +82,7 @@ export function Import() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pb-10" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <Link to="/settings" className="flex min-h-11 items-center text-accent">返回设置</Link>
-      <h1 className="text-[30px] font-bold">导入词库</h1>
+      <h1 className="text-[30px] font-bold leading-tight tracking-tight">导入词库</h1>
       <p className="text-sm text-muted">只追加新词，已有词自动跳过，不改变现有卡片和复习进度。</p>
       <section className="rounded-(--radius-card) bg-panel p-4">
         <h2 className="font-semibold">支持的格式</h2>
@@ -89,15 +90,13 @@ export function Import() {
         <p className="mt-2 text-sm text-muted">保留词头、中文释义、IPA 和例句；不导入英文释义、词性、时态和旧复习进度。新词会按每日额度开始学习。</p>
         <p className="mt-2 text-sm text-muted">上限 5 MB、10000 条。Mnemo 的 JSON 备份请在设置中使用「从文件恢复」，恢复会覆盖全部数据。</p>
       </section>
-      <label className={`relative flex min-h-11 items-center justify-center rounded-(--radius-card) bg-accent px-4 py-3 font-semibold text-white focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2 ${busy ? 'opacity-40' : ''}`}>
-        选择文件
-        <input type="file" aria-label="选择词库文件" className="sr-only" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" disabled={busy}
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = ''
-            void selectFile(file)
-          }} />
-      </label>
+      <Button size="lg" className="w-full" disabled={busy} onClick={() => fileRef.current?.click()}>选择文件</Button>
+      <input ref={fileRef} type="file" aria-label="选择词库文件" className="sr-only" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" disabled={busy}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          void selectFile(file)
+        }} />
       {busy && <p role="status" className="text-sm text-muted">{phase === 'reading' ? '正在读取文件…' : '正在导入，请稍候…'}</p>}
       {error && <p role="alert" className="text-sm text-again-fg">{error}</p>}
       {selection && (

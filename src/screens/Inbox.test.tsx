@@ -31,9 +31,9 @@ describe('Inbox', () => {
 
   it('deletes a draft after confirmation', async () => {
     await db.drafts.add({ id: 'd1', raw: 'leverage', kind: 'headword', createdAt: 1 })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderWithRouter(<Inbox />, { route: '/inbox', path: '/inbox' })
     fireEvent.click(await screen.findByRole('button', { name: '删除 leverage' }))
+    fireEvent.click(await screen.findByRole('button', { name: '删除草稿' }))
     await waitFor(async () => expect(await db.drafts.count()).toBe(0))
     expect(await screen.findByText('收集箱是空的')).toBeTruthy()
   })

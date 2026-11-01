@@ -106,18 +106,20 @@ export function Cards() {
       />
       {batch && (
         <>
-          <section aria-label="批量选择" className="sticky z-10 rounded-(--radius-card) border border-line bg-panel p-3" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
-            <p className="text-sm font-semibold" role="status">已选 {selected.size} 个单词</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+          <section aria-label="批量选择" className="sticky z-10 rounded-(--radius-card) border-b border-line bg-panel px-3 pt-3 pb-2" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold" role="status">已选 {selected.size} 个单词</p>
+              <button type="button" className="min-h-11 px-1 text-sm text-accent disabled:opacity-40" disabled={locked || selected.size === 0} onClick={clearSelection}>清除选择</button>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3">
               <Button variant="secondary" disabled={locked || !notes?.length} onClick={() => {
                 if (working.current) return
                 setSelected(new Set(notes?.map((note) => note.id)))
                 setResult(undefined)
               }}>全选搜索结果{!searchPending && notes ? `（${notes.length}）` : ''}</Button>
-              <Button variant="ghost" disabled={locked || totals.notes === 0} onClick={() => void selectLibrary()}>选择整个词库</Button>
-              <Button variant="ghost" disabled={locked || selected.size === 0} onClick={clearSelection}>清除选择</Button>
+              <button type="button" className="min-h-11 text-xs text-muted underline underline-offset-4 disabled:opacity-40" disabled={locked || totals.notes === 0} onClick={() => void selectLibrary()}>选择整个词库（{totals.notes}）</button>
             </div>
-            <p className="mt-1 text-xs text-muted">全选包含尚未展示的单词；更改搜索会清除选择。</p>
+            <p className="text-xs text-muted">全选包含尚未展示的单词；更改搜索会清除选择。</p>
           </section>
           {selected.size > 0 && (
             <BulkNoteActions key={selectedIds.join(',')} noteIds={selectedIds} disabled={locked} onBusyChange={changeBusy} onComplete={complete} />
@@ -143,9 +145,9 @@ export function Cards() {
                     <div className="truncate text-xs text-muted">{note.meaning.split('\n')[0]}</div>
                   </div>
                   <div className="shrink-0 text-right text-[11px] text-muted">
-                    <div className="mb-0.5 flex justify-end gap-1">
+                    <div className="mb-1 flex justify-end gap-1">
                       {CARD_TYPES.map((type) => (
-                        <span key={type} title={CARD_TYPE_LABEL[type]} className={`rounded px-1 text-[9px] ${enabled.has(type) ? 'bg-easy-bg text-accent' : 'bg-line text-muted'}`}>{SHORT[type]}</span>
+                        <span key={type} title={CARD_TYPE_LABEL[type]} className={`rounded-full px-1.5 text-[10px] ${enabled.has(type) ? 'bg-easy-bg text-accent' : 'bg-line text-muted'}`}>{SHORT[type]}</span>
                       ))}
                     </div>
                     <span className={due === '新' ? 'text-accent' : ''}>{due}</span>

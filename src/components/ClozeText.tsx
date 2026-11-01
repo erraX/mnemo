@@ -10,7 +10,7 @@ export function ClozeText({
         !seg.blank ? (
           <span key={i}>{seg.text}</span>
         ) : mode === 'highlight' ? (
-          <mark key={i} className="rounded-sm bg-cloze px-0.5 text-ink">{seg.text}</mark>
+          <mark key={i} className="rounded-full bg-cloze px-1 text-ink">{seg.text}</mark>
         ) : (
           <span
             key={i}

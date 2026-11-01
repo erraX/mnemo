@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from '@/domain/types'
-import { BREATHER_EVERY, afterGrade, afterUndo, continueAfterBreather, elapsedMinutes, initialSession, reveal, withQueue } from './session'
+import { BREATHER_EVERY, activeMinutes, afterGrade, afterUndo, continueAfterBreather, elapsedMinutes, initialSession, readSessionMemory, reveal, withQueue, writeSessionMemory } from './session'
+import { learningDayStart } from './day'
 
 const NOW = 1_700_000_000_000
 let n = 0
@@ -61,6 +62,26 @@ describe('session', () => {
     expect(s1.queue.map((x) => x.id)).toEqual([a.id, b.id, c.id])
     expect(afterUndo(s0, { wasNew: false, queue: [b, c], restoredId: 'missing' }).queue.map((x) => x.id)).toEqual([b.id, c.id])
   })
+  it('activeMinutes leaves out the time the app was in the background', () => {
+    expect(activeMinutes(NOW, 0, NOW + 20_000)).toBe(1)
+    expect(activeMinutes(NOW, 0, NOW + 9.6 * 60_000)).toBe(10)
+    // 开着标签页去吃午饭：12 分钟里只有 2 分钟在前台
+    expect(activeMinutes(NOW, 10 * 60_000, NOW + 12 * 60_000)).toBe(2)
+    expect(activeMinutes(NOW, 60 * 60_000, NOW + 60 * 60_000)).toBe(1)
+  })
+
+  it('session memory only survives inside the same learning day', () => {
+    const state = { ...initialSession(NOW), sinceBreather: 7 }
+    const raw = writeSessionMemory(state)
+    expect(readSessionMemory(raw, NOW + 60_000)).toEqual({ dayStart: learningDayStart(NOW), sinceBreather: 7, startedAt: NOW })
+    // 跨天（04:00 边界之后）从头开始
+    expect(readSessionMemory(raw, NOW + 24 * 60 * 60_000)).toBeUndefined()
+    // 损坏或旧格式一律当没有
+    expect(readSessionMemory('{not json', NOW)).toBeUndefined()
+    expect(readSessionMemory('{"dayStart":1}', NOW)).toBeUndefined()
+    expect(readSessionMemory(null, NOW)).toBeUndefined()
+  })
+
   it('elapsedMinutes rounds up to at least 1', () => {
     expect(elapsedMinutes(initialSession(NOW), NOW + 20_000)).toBe(1)
     expect(elapsedMinutes(initialSession(NOW), NOW + 9.6 * 60_000)).toBe(10)

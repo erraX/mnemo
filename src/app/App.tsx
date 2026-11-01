@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
+import { ErrorBoundary } from './ErrorBoundary'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
 import { useOnlinePrefetch } from './useOnlinePrefetch'
@@ -45,7 +46,7 @@ function Shell() {
         <Route path="/note/:id" element={<NoteEditorRoute />} />
         <Route path="/spike/audio" element={<AudioSpike />} />
         <Route path="/spike/tts" element={<TtsSpike />} />
-        <Route path="*" element={<Placeholder title="未找到" />} />
+        <Route path="*" element={<Placeholder title="这个地址没有内容" hint="链接可能过期了，或者这一屏已经换地址。" />} />
       </Routes>
       {pathname !== '/review' && <UpdatePrompt />}
     </>
@@ -55,7 +56,9 @@ function Shell() {
 export function App() {
   return (
     <HashRouter>
-      <Shell />
+      <ErrorBoundary>
+        <Shell />
+      </ErrorBoundary>
     </HashRouter>
   )
 }

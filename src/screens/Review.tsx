@@ -1,11 +1,11 @@
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router'
 import { db } from '@/db/db'
 import { addExtraNewToday, getSettings, getTodayQueue, getTodayReviewStats, gradeCard, undoLastReview } from '@/db/repo'
 import { DEFAULT_SETTINGS, type Rating } from '@/domain/types'
 import { scheduler } from '@/lib/scheduler'
-import { afterGrade, afterUndo, continueAfterBreather, elapsedMinutes, initialSession, reveal, withQueue } from '@/lib/session'
+import { SESSION_MEMORY_KEY, activeMinutes, afterGrade, afterUndo, continueAfterBreather, initialSession, readSessionMemory, reveal, withQueue, writeSessionMemory } from '@/lib/session'
 import { useAudio } from '@/app/useAudio'
 import { useVisibilityTick } from '@/app/useVisibilityTick'
 import { Button } from '@/components/ui/Button'
@@ -15,15 +15,40 @@ import { CardFront } from '@/components/review/CardFront'
 import { DonePage } from '@/components/review/DonePage'
 import { GradeBar } from '@/components/review/GradeBar'
 
+function rememberGet(key: string): string | null {
+  try { return sessionStorage.getItem(key) } catch { return null }
+}
+
+function rememberSet(key: string, value: string): void {
+  try { sessionStorage.setItem(key, value) } catch { /* 隐私模式或存储被禁用：节奏不跨屏，但不影响答题 */ }
+}
+
 export function Review() {
   const navigate = useNavigate()
   const audio = useAudio()
   const settings = useLiveQuery(() => getSettings(db), [], DEFAULT_SETTINGS)
-  const [session, setSession] = useState(() => initialSession(Date.now()))
+  // 从复习屏点「编辑」再回来会重建会话；20 张节奏与开始时间要接上，不能悄悄从 0 重新数
+  const [session, setSession] = useState(() => {
+    const now = Date.now()
+    const base = initialSession(now)
+    const memory = readSessionMemory(rememberGet(SESSION_MEMORY_KEY), now)
+    return memory ? { ...base, sinceBreather: memory.sinceBreather, stats: { ...base.stats, startedAt: memory.startedAt } } : base
+  })
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState<string | undefined>(undefined)
   const [loadError, setLoadError] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
+  // 切走 / 锁屏的时间不算进"学习分钟"，否则开着标签页吃个午饭就会报 43 分钟
+  const idleMs = useRef(0)
+  const hiddenAt = useRef<number | undefined>(undefined)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) hiddenAt.current = Date.now()
+      else if (hiddenAt.current !== undefined) { idleMs.current += Date.now() - hiddenAt.current; hiddenAt.current = undefined }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
   const tick = useVisibilityTick()
 
   const current = session.queue[0]
@@ -72,6 +97,10 @@ export function Review() {
     return () => clearTimeout(t)
   }, [toast])
 
+  useEffect(() => {
+    rememberSet(SESSION_MEMORY_KEY, writeSessionMemory(session))
+  }, [session.sinceBreather, session.stats.startedAt])
+
   const playHeadword = () => { if (note) void audio.play(note.headword) }
 
   // fuzz 开启时每次调用结果可能略有不同，按卡片固定一次，避免按钮文案抖动
@@ -83,11 +112,6 @@ export function Review() {
   function onReveal() {
     setSession(reveal)
     if (settings.autoPlayOnReveal) playHeadword()
-  }
-
-  function onCardKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.target !== e.currentTarget) return
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReveal() }
   }
 
   async function onGrade(rating: Rating) {
@@ -143,12 +167,30 @@ export function Review() {
     }
   }
 
+  // 键盘：Enter/空格翻面，1–4 打分。手机上用不到，Mac 上不该只能用鼠标
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if (tag && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+      if (session.phase !== 'card' || busy) return
+      if (!session.revealed) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReveal() }
+        return
+      }
+      const rating = ({ '1': 1, '2': 2, '3': 3, '4': 4 } as Record<string, Rating>)[e.key]
+      if (rating) { e.preventDefault(); void onGrade(rating) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [session.phase, session.revealed, busy])
+
   let body: ReactNode
   if (session.phase === 'loading') {
     body = loadError ? (
       <div className="grid min-h-dvh place-items-center p-6 text-center">
         <div>
-          <div className="text-xl font-semibold">加载失败</div>
+          <div className="text-[22px] font-bold leading-tight">加载失败</div>
           <Button variant="secondary" className="mt-4" onClick={() => setLoadAttempt((n) => n + 1)}>重试</Button>
         </div>
       </div>
@@ -162,7 +204,7 @@ export function Review() {
       <DonePage
         reviewed={todayStats?.reviewed ?? session.stats.reviewed}
         learned={todayStats?.learned ?? session.stats.learned}
-        minutes={elapsedMinutes(session, Date.now())}
+        minutes={activeMinutes(session.stats.startedAt, idleMs.current, Date.now())}
         onMore={() => void onMore()}
         onHome={() => navigate('/')}
         moreDisabled={busy}
@@ -172,13 +214,10 @@ export function Review() {
   } else {
     body = (
       <div className="flex min-h-dvh flex-col bg-panel" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex items-center justify-between px-4 py-3 text-sm">
-          <button type="button" aria-label="关闭" className="text-muted" onClick={() => navigate('/')}>✕</button>
-          <span className="font-semibold">剩余 {session.queue.length}</span>
-          <div className="flex gap-4">
-            <button type="button" className="text-accent disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
-            <button type="button" className="text-accent" onClick={() => navigate(`/note/${current.noteId}`)}>编辑</button>
-          </div>
+        <div className="grid grid-cols-3 items-center px-4 py-3 text-sm">
+          <button type="button" aria-label="关闭" className="-ml-2 grid h-11 w-11 place-items-center text-muted" onClick={() => navigate('/')}>✕</button>
+          <span className="justify-self-center font-semibold">剩余 {session.queue.length}</span>
+          <span />
         </div>
 
         {session.revealed ? (
@@ -186,14 +225,12 @@ export function Review() {
             {!noteLoaded ? null : note ? <CardBack note={note} onPlay={playHeadword} /> : <p className="text-sm text-muted">记录不存在</p>}
           </div>
         ) : (
-          // 规格 §5.6：点卡片任意位置翻面；翻面是用户手势，自动播放留在手势内
+          // 规格 §5.6：点卡片任意位置翻面；翻面是用户手势，自动播放留在手势内。
+          // 这里不再自封 role="button"：那会把 aria-label 罩在整棵子树上，读屏永远读不到正在被考的词。
+          // 键盘与读屏走底部「看答案」按钮。
           <div
-            role="button"
-            aria-label="翻面"
-            tabIndex={0}
-            className="mx-auto flex w-full max-w-md flex-1 cursor-pointer flex-col justify-center px-6 py-4 outline-none"
+            className="mx-auto flex w-full max-w-md flex-1 cursor-pointer flex-col justify-center px-6 py-4"
             onClick={() => { if (note) onReveal() }}
-            onKeyDown={onCardKeyDown}
           >
             {!noteLoaded ? null : note ? <CardFront card={current} note={note} onPlay={playHeadword} /> : <p className="text-sm text-muted">记录不存在</p>}
           </div>
@@ -208,6 +245,13 @@ export function Review() {
               <Button size="lg" className="w-full" onClick={onReveal} disabled={!note}>看答案</Button>
             </>
           )}
+          {/* 撤销与编辑放在拇指区：打错一档不用去够屏幕右上角 */}
+          {noteLoaded && (
+            <div className="mt-1 flex items-center justify-center gap-8 text-sm">
+              <button type="button" className="min-h-11 text-muted disabled:opacity-40" disabled={!session.canUndo || busy} onClick={() => void onUndo()}>撤销上一步</button>
+              <button type="button" className="min-h-11 text-accent disabled:opacity-40" disabled={!current} onClick={() => current && navigate(`/note/${current.noteId}`)}>编辑</button>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -216,7 +260,7 @@ export function Review() {
   return (
     <>
       {body}
-      {toast && <div className="pointer-events-none fixed inset-x-0 bottom-44 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
+      {toast && <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-44 text-center"><span className="rounded-full bg-ink px-3 py-1 text-xs text-bg">{toast}</span></div>}
     </>
   )
 }

@@ -91,14 +91,26 @@ describe('NoteEditor (stale lookup guard)', () => {
 describe('NoteEditor (edit)', () => {
   it('asks for confirmation before removing a card type and aborts on cancel', async () => {
     const note = await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['zh2en', 'en2zh'] })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
     await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern'))
     fireEvent.click(screen.getByRole('button', { name: '中 → 英' }))
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
-    await waitFor(() => expect(confirm).toHaveBeenCalled())
-    expect(confirm.mock.calls[0]![0]).toContain('中 → 英')
+    // 先摊开影响面：关哪个卡型、几张卡、几条复习记录
+    expect(await screen.findByText('关闭 中 → 英')).toBeTruthy()
+    expect(screen.getByText('1 张卡 · 0 条复习记录')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '继续编辑' }))
+    await waitFor(() => expect(screen.queryByText('关闭 中 → 英')).toBeNull())
     expect(await db.cards.where('noteId').equals(note.id).count()).toBe(2)
+  })
+
+  it('saves after the card-type removal is confirmed', async () => {
+    const note = await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['zh2en', 'en2zh'] })
+    renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern'))
+    fireEvent.click(screen.getByRole('button', { name: '中 → 英' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    fireEvent.click(await screen.findByRole('button', { name: '关闭并保存' }))
+    await waitFor(async () => expect(await db.cards.where('noteId').equals(note.id).count()).toBe(1))
   })
 
   it('shows no dictionary hints until the headword is changed, but still warns about duplicates', async () => {
@@ -152,11 +164,40 @@ describe('NoteEditor (edit)', () => {
 
   it('deletes the note after confirmation', async () => {
     const note = await createNote(db, { headword: 'concern', meaning: 'x', examples: [], tags: [], enabledTypes: ['en2zh'] })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderWithRouter(<NoteEditor />, { route: `/note/${note.id}`, path: '/note/:id' })
     await waitFor(() => expect(screen.getByRole('button', { name: '删除这条记录' })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: '删除这条记录' }))
+    expect(await screen.findByText('「concern」及其 1 张卡')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '确认删除' }))
     await waitFor(async () => expect(await db.notes.count()).toBe(0))
+  })
+})
+
+describe('NoteEditor (leaving)', () => {
+  const routes = (
+    <Routes>
+      <Route path="/" element={<div data-testid="home" />} />
+      <Route path="/note/new" element={<NoteEditor />} />
+      <Route path="/note/:id" element={<NoteEditor />} />
+    </Routes>
+  )
+
+  it('asks before throwing away a filled form', async () => {
+    render(<MemoryRouter initialEntries={['/note/new']}>{routes}</MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('单词 / 短语'), { target: { value: 'concern' } })
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(await screen.findByText('这条卡还没保存')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '继续编辑' }))
+    expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe('concern')
+    expect(screen.queryByTestId('home')).toBeNull()
+  })
+
+  it('leaves without asking when nothing was typed', async () => {
+    render(<MemoryRouter initialEntries={['/note/new']}>{routes}</MemoryRouter>)
+    await waitFor(() => expect((screen.getByLabelText('单词 / 短语') as HTMLInputElement).value).toBe(''))
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(await screen.findByTestId('home')).toBeTruthy()
+    expect(screen.queryByText('这条卡还没保存')).toBeNull()
   })
 })
 

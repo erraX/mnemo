@@ -158,6 +158,21 @@ export async function deleteNote(db: MnemoDB, id: string): Promise<void> {
   })
 }
 
+/**
+ * 只读：删除前先算影响面（多少张卡、多少条复习记录）。
+ * 给了 types 就只统计这些卡型会带走的东西（关闭卡型时用），否则统计整条记录。
+ */
+export async function previewNoteDeletion(
+  db: MnemoDB, id: string, types?: CardType[],
+): Promise<{ cards: number; logs: number }> {
+  const cards = await db.cards.where('noteId').equals(id).toArray()
+  const doomed = types ? cards.filter((c) => types.includes(c.type)) : cards
+  if (!types) return { cards: doomed.length, logs: await db.reviewLogs.where('noteId').equals(id).count() }
+  const ids = doomed.map((c) => c.id)
+  const logs = ids.length ? await db.reviewLogs.where('cardId').anyOf(ids).count() : 0
+  return { cards: doomed.length, logs }
+}
+
 export async function findDuplicate(db: MnemoDB, headword: string, excludeId?: string): Promise<Note | undefined> {
   const key = headwordKey(headword)
   if (!key) return undefined

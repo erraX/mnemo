@@ -1,9 +1,10 @@
-export function Placeholder({ title }: { title: string }) {
+export function Placeholder({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center p-6 text-center text-muted">
+    <div className="grid min-h-dvh place-items-center p-6 text-center">
       <div>
-        <div className="text-xl font-semibold text-ink">{title}</div>
-        <div className="mt-1 text-sm">第二阶段实现</div>
+        <div className="text-[22px] font-bold leading-tight text-ink">{title}</div>
+        {hint && <p className="mt-1 text-[15px] leading-normal text-muted">{hint}</p>}
+        <a href="#/" className="mt-2 inline-flex min-h-11 items-center text-sm text-accent">回到首页</a>
       </div>
     </div>
   )

@@ -12,7 +12,7 @@ export function ClozeEditor({ text, blanks, onChange }: { text: string; blanks: 
             type="button"
             aria-pressed={isBlank(t.start, t.end)}
             onClick={() => onChange(toggleBlank(blanks, t))}
-            className={`rounded-sm px-0.5 py-1 ${isBlank(t.start, t.end) ? 'bg-cloze text-ink underline decoration-2 underline-offset-4' : ''}`}
+            className={`rounded-full px-1 py-1 ${isBlank(t.start, t.end) ? 'bg-cloze text-ink underline decoration-2 underline-offset-4' : ''}`}
           >
             {t.text}
           </button>
