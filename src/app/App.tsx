@@ -3,6 +3,7 @@ import { HashRouter, Outlet, Route, Routes, useLocation } from 'react-router'
 import { ErrorBoundary } from './ErrorBoundary'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useDictLoader } from './useDictLoader'
+import { useCloudPull } from './useCloudPull'
 import { useOnlinePrefetch } from './useOnlinePrefetch'
 import { TabBar } from '@/components/TabBar'
 import { Inbox } from '@/screens/Inbox'
@@ -30,6 +31,7 @@ function WithTabs() {
 function Shell() {
   const dict = useDictLoader()
   useOnlinePrefetch()
+  useCloudPull()
   const { pathname } = useLocation()
   return (
     <>
