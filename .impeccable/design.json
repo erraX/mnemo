@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T01:53:17Z",
+  "generatedAt": "2026-11-13T13:24:47Z",
   "title": "Design System: Mnemo",
   "extensions": {
     "colorMeta": {
@@ -15,6 +15,12 @@
         "displayName": "Signal Blue Night 夜色信号蓝",
         "canonical": "#0a84ff",
         "tonalRamp": ["#043566", "#075eb5", "#0e86ff", "#4da5ff", "#82c0ff", "#afd7ff", "#d2e9ff", "#e9f4ff"]
+      },
+      "accent-ink": {
+        "role": "primary",
+        "displayName": "Signal Blue Ink 文字蓝",
+        "canonical": "#0063cc",
+        "tonalRamp": ["#03336d", "#065dbc", "#387fde", "#64a0f2", "#8cbbfe", "#b4d3ff", "#d5e6fe", "#eaf3ff"]
       },
       "on-accent": {
         "role": "primary",
@@ -43,8 +49,8 @@
       "neutral-muted": {
         "role": "neutral",
         "displayName": "Fog Grey 雾灰",
-        "canonical": "#86868b",
-        "tonalRamp": ["#2e2e2f", "#515154", "#757579", "#99999d", "#b7b7ba", "#d1d1d3", "#e5e5e6", "#f2f2f3"]
+        "canonical": "#6e6e73",
+        "tonalRamp": ["#353538", "#606064", "#808084", "#9e9ea2", "#b8b8bc", "#d0d0d4", "#e4e4e7", "#f1f1f4"]
       },
       "neutral-line": {
         "role": "neutral",
@@ -133,8 +139,8 @@
       "hard-fg": {
         "role": "tertiary",
         "displayName": "Amber Ink 琥珀墨",
-        "canonical": "#b7791f",
-        "tonalRamp": ["#422b0b", "#754d14", "#a86f1c", "#c5944c", "#d7b481", "#e5cfae", "#f1e4d2", "#f8f2e9"]
+        "canonical": "#7d5200",
+        "tonalRamp": ["#4a2f01", "#81570e", "#9e7944", "#b9986c", "#d0b48f", "#e5cdad", "#f6e1c6", "#ffefdb"]
       },
       "good-bg": {
         "role": "tertiary",
@@ -145,8 +151,8 @@
       "good-fg": {
         "role": "tertiary",
         "displayName": "Moss Ink 苔绿墨",
-        "canonical": "#1e8449",
-        "tonalRamp": ["#0d3920", "#176638", "#2f8d57", "#65ab82", "#93c4a8", "#bad9c7", "#d8eae0", "#ecf4ef"]
+        "canonical": "#17693a",
+        "tonalRamp": ["#034120", "#277143", "#549067", "#7bac89", "#9bc5a6", "#b8dbc1", "#d0eed7", "#e0fae6"]
       },
       "easy-bg": {
         "role": "tertiary",
@@ -157,8 +163,8 @@
       "easy-fg": {
         "role": "tertiary",
         "displayName": "Sky Ink 天蓝墨",
-        "canonical": "#0071e3",
-        "tonalRamp": ["#00356b", "#005fbf", "#2083e7", "#5aa3ed", "#8cbff2", "#b5d6f7", "#d6e8fa", "#eaf4fd"]
+        "canonical": "#0063cc",
+        "tonalRamp": ["#03336d", "#065dbc", "#387fde", "#64a0f2", "#8cbbfe", "#b4d3ff", "#d5e6fe", "#eaf3ff"]
       },
       "again-fg-night": {
         "role": "tertiary",
@@ -201,10 +207,25 @@
         "displayName": "Sky Night Wash 夜色天蓝薄涂",
         "canonical": "color-mix(in srgb, #0a84ff 18%, transparent)",
         "tonalRamp": ["#2c2e30", "#263038", "#192f47", "#1c3d5e", "#204d78", "#2a6499", "#3a80c0", "#5aa0e0"]
+      },
+      "accent-ink-night": {
+        "role": "primary",
+        "displayName": "Signal Blue Night Ink 夜色文字蓝",
+        "canonical": "#4da3ff",
+        "tonalRamp": ["#11365e", "#29629f", "#3b83cf", "#4ca2fd", "#84bdff", "#b1d5fe", "#d2e7ff", "#e9f3ff"]
+      },
+      "easy-fg-night": {
+        "role": "tertiary",
+        "displayName": "Sky Night Ink 夜色天蓝墨",
+        "canonical": "#4da3ff",
+        "tonalRamp": ["#11365e", "#29629f", "#3b83cf", "#4ca2fd", "#84bdff", "#b1d5fe", "#d2e7ff", "#e9f3ff"]
       }
     },
     "typographyMeta": {
-      "numeric": { "displayName": "Numeric 数字", "purpose": "首页待复习/新卡计数。全系统最大的元素。" },
+      "numeric": {
+        "displayName": "Numeric 数字",
+        "purpose": "首页待复习数字，一屏只有一个。新卡数不与之并列，跟在同一个基线上的 15px 雾灰说明里。全系统最大的元素。"
+      },
       "display": { "displayName": "Display 大标题", "purpose": "页面标题、复习正反面的词头。" },
       "headline": { "displayName": "Headline 标题", "purpose": "完成页与歇脚页的单一标题句。" },
       "meaning": { "displayName": "Meaning 释义", "purpose": "中→英正面的释义全文，保留换行。" },
@@ -213,8 +234,14 @@
       "body-sm": { "displayName": "Body Small 小正文", "purpose": "设置行、sheet 头部动作、音标行。" },
       "small": { "displayName": "Small 说明", "purpose": "副标题、chip、评分按钮主标签。" },
       "caption": { "displayName": "Caption 注解", "purpose": "例句来源、标签、列表副行、提醒条、toast。" },
-      "label": { "displayName": "Label 提示标签", "purpose": "复习卡面上的大写提示词。" },
-      "micro": { "displayName": "Micro 微标签", "purpose": "表单字段标签、tab bar 文字、评分间隔预览。" }
+      "label": {
+        "displayName": "Label 提示标签",
+        "purpose": "复习卡面上的大写提示词。字距只给拉丁字；中文标签不带字距。"
+      },
+      "micro": {
+        "displayName": "Micro 微标签",
+        "purpose": "tab bar 文字、评分按钮的间隔预览、草稿状态徽标、列表到期文案。功能字的下限是 11px。"
+      }
     },
     "shadows": [
       {
@@ -226,6 +253,11 @@
         "name": "floating-notice",
         "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
         "purpose": "只给“有新版本”浮动提示条。"
+      },
+      {
+        "name": "sheet-panel",
+        "value": "0 -10px 15px -3px rgba(0,0,0,0.1)",
+        "purpose": "只给贴底的批量卡型编辑/预览面板。向上的偏移是它与普通卡片唯一的区别。"
       }
     ],
     "motion": [
@@ -254,81 +286,79 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "唯一的高权重动作：开始复习、看答案、继续、回到首页。",
+      "description": "唯一的高权重动作：开始复习、看答案、继续、回到首页。禁用时只降透明度，把“为什么不能点”写在按钮外面的一行雾灰里，标签同时收短。",
       "html": "<button class=\"ds-btn-primary\">开始复习</button>",
       "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 50px; padding: 0 20px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-accent, #0071e3); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms; } .ds-btn-primary:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 88%, #000); } .ds-btn-primary:active { background: color-mix(in srgb, var(--color-accent, #0071e3) 76%, #000); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
     },
     {
-      "name": "Secondary Button",
+      "name": "Secondary & Ghost Text Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "另一个可选动作，不是取消：再学 10 张新卡、重试、全选搜索结果。",
-      "html": "<button class=\"ds-btn-secondary\">再学 10 张新卡</button>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 50px; padding: 0 20px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-accent, #0071e3)); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-secondary:disabled { opacity: 0.4; cursor: default; }"
-    },
-    {
-      "name": "Ghost Text Button",
-      "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "低频或退出动作：sheet 头部的取消/保存、批量管理入口。删除类动作用 again-fg 文字。",
-      "html": "<div class=\"ds-row\"><button class=\"ds-btn-ghost\">取消</button><span class=\"ds-title\">新卡片</span><button class=\"ds-btn-ghost ds-strong\">保存</button></div>",
-      "css": ".ds-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--color-line, #e5e5e7); background: var(--color-panel, #fff); } .ds-title { font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; font-weight: 600; color: var(--color-ink, #1d1d1f); } .ds-btn-ghost { height: 44px; padding: 0 16px; border: none; border-radius: var(--radius-card, 14px); background: transparent; color: var(--color-accent, #0071e3); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; font-weight: 400; cursor: pointer; transition: background-color 150ms; } .ds-btn-ghost.ds-strong { font-weight: 600; } .ds-btn-ghost:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 8%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
+      "description": "次要动作是另一种选择，不是取消：Sky Wash 底 + 文字蓝。ghost 承载低频与退出动作，蓝字用 accent-ink 而不是 accent；破坏性动作只把文字换成 again-fg，永远不做实心珊瑚底按钮。",
+      "html": "<div class=\"ds-stack\"><button class=\"ds-btn-secondary\">再学 10 张新卡</button><button class=\"ds-btn-ghost\">取消</button><button class=\"ds-btn-ghost ds-danger\">删除单词</button></div>",
+      "css": ".ds-stack { display: flex; flex-direction: column; gap: 8px; } .ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 50px; padding: 0 20px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-easy-bg, #e8f4fd); color: var(--color-easy-fg, #0063cc); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-easy-fg, #0063cc)); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; border: none; border-radius: var(--radius-card, 14px); background: transparent; color: var(--color-accent-ink, #0063cc); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; line-height: 1; cursor: pointer; transition: background-color 150ms; } .ds-btn-ghost:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 8%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-btn-ghost.ds-danger { color: var(--color-again-fg, #c0392b); }"
     },
     {
       "name": "Card Type Chips",
       "kind": "chip",
       "refersTo": "chip",
-      "description": "建卡时的卡型多选。选中反色成 Ink 底，不可用态 40% 透明并用 title 说明原因。",
-      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-on\" aria-pressed=\"true\">中 → 英</button><button class=\"ds-chip ds-on\" aria-pressed=\"true\">例句挖空</button><button class=\"ds-chip\" aria-pressed=\"false\">英 → 中</button><button class=\"ds-chip\" disabled>置灰</button></div>",
-      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; } .ds-chip { padding: 6px 12px; border: 1px solid var(--color-line, #e5e5e7); border-radius: 999px; background: var(--color-panel, #fff); color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 14px; line-height: 1.4; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms, border-color 150ms; } .ds-chip:hover { border-color: var(--color-muted, #86868b); } .ds-chip:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-chip.ds-on { background: var(--color-ink, #1d1d1f); border-color: var(--color-ink, #1d1d1f); color: var(--color-bg, #f5f5f7); } .ds-chip:disabled { opacity: 0.4; cursor: default; }"
+      "description": "建卡时的卡型多选，只出现在能点的地方（卡片列表不再用 chip 展示卡型）。选中反色成 Ink 底，不可用态 40% 透明并用 title 说明原因。",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-on\" aria-pressed=\"true\">中 → 英</button><button class=\"ds-chip ds-on\" aria-pressed=\"true\">例句挖空</button><button class=\"ds-chip\" aria-pressed=\"false\">英 → 中</button><button class=\"ds-chip\" disabled title=\"先给例句挖一个空\">置灰</button></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; } .ds-chip { padding: 6px 12px; border: 1px solid var(--color-line, #e5e5e7); border-radius: 999px; background: var(--color-panel, #fff); color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 14px; line-height: 1.4; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms, border-color 150ms; } .ds-chip:hover { border-color: var(--color-muted, #6e6e73); } .ds-chip:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-chip.ds-on { background: var(--color-ink, #1d1d1f); border-color: var(--color-ink, #1d1d1f); color: var(--color-bg, #f5f5f7); } .ds-chip:disabled { opacity: 0.4; cursor: default; }"
     },
     {
       "name": "Form Field",
       "kind": "input",
       "refersTo": "field",
-      "description": "建卡表单的字段容器：卡面白底 + 12px 圆角，10px 大写标签，输入本身透明无边框。",
-      "html": "<div class=\"ds-field\"><div class=\"ds-field-label\"><span>单词 / 短语</span><em>已从词典补全</em></div><input class=\"ds-field-input\" value=\"concern\" aria-label=\"单词 / 短语\" /></div>",
-      "css": ".ds-field { padding: 8px 12px; border-radius: var(--radius-field, 12px); background: var(--color-panel, #fff); } .ds-field-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-muted, #86868b); } .ds-field-label em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--color-good-fg, #1e8449); } .ds-field-input { width: 100%; padding: 0; border: none; background: transparent; color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 20px; font-weight: 600; outline: none; } .ds-field:focus-within { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent, #0071e3) 35%, transparent); }"
+      "description": "建卡表单的字段容器：卡面白底 + 12px 圆角，11px 雾灰标签（不带字距），输入本身透明无边框、≥ 16px 以防 iOS 聚焦缩放。焦点环由全局 :focus-visible 提供，不另画。",
+      "html": "<div class=\"ds-field\"><div class=\"ds-field-label\"><span>单词 / 短语</span><em class=\"ds-hint\">✓ 已从词典补全</em></div><input class=\"ds-field-input\" value=\"concern\" aria-label=\"单词 / 短语\" /></div>",
+      "css": ".ds-field { padding: 8px 12px; border-radius: var(--radius-field, 12px); background: var(--color-panel, #fff); } .ds-field-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 11px; font-weight: 400; color: var(--color-muted, #6e6e73); } .ds-hint { font-style: normal; color: var(--color-good-fg, #17693a); } .ds-field-input { width: 100%; padding: 0; border: none; background: transparent; color: var(--color-ink, #1d1d1f); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 22px; font-weight: 700; line-height: 1.4; } .ds-field-input:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; border-radius: 4px; }"
     },
     {
       "name": "Note List Row",
       "kind": "card",
       "refersTo": "list-row",
-      "description": "卡片列表的一行：词头 16/600、释义首行雾灰、右侧卡型小标签与到期文案。",
-      "html": "<div class=\"ds-list\"><div class=\"ds-li\"><div class=\"ds-li-main\"><div class=\"ds-hw\">concern</div><div class=\"ds-mn\">n. 担忧，顾虑</div></div><div class=\"ds-li-right\"><div class=\"ds-types\"><span class=\"ds-ty ds-ty-on\">中英</span><span class=\"ds-ty ds-ty-on\">挖空</span><span class=\"ds-ty\">英中</span></div><span class=\"ds-due\">新</span></div></div></div>",
-      "css": ".ds-list { overflow: hidden; border-radius: var(--radius-card, 14px); background: var(--color-panel, #fff); } .ds-li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 12px 16px; border-bottom: 1px solid var(--color-line, #e5e5e7); } .ds-li:last-child { border-bottom: none; } .ds-li-main { min-width: 0; flex: 1; } .ds-hw { font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; color: var(--color-ink, #1d1d1f); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-mn { margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 12px; color: var(--color-muted, #86868b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-li-right { flex-shrink: 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 11px; color: var(--color-muted, #86868b); } .ds-types { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 2px; } .ds-ty { padding: 0 4px; border-radius: 4px; background: var(--color-line, #e5e5e7); color: var(--color-muted, #86868b); font-size: 9px; } .ds-ty.ds-ty-on { background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); } .ds-due { color: var(--color-accent, #0071e3); }"
+      "description": "卡片列表的一行记录（两行高度）：词头 16/600 与到期文案 11px 同基线，第二行释义首行 12px 雾灰；只有真的缺卡型时才多一行 11px“缺 中英 · 挖空”。列表行之间只有 1px 发丝线，没有 chip、没有底纹。",
+      "html": "<ul class=\"ds-list\"><li class=\"ds-li\"><div class=\"ds-li-main\"><div class=\"ds-li-head\"><span class=\"ds-hw\">concern</span><span class=\"ds-due ds-new\">新</span></div><div class=\"ds-mn\">n. 担忧，顾虑</div><div class=\"ds-missing\">缺 中英 · 挖空</div></div></li><li class=\"ds-li\"><div class=\"ds-li-main\"><div class=\"ds-li-head\"><span class=\"ds-hw\">tide over</span><span class=\"ds-due\">3 天后</span></div><div class=\"ds-mn\">phr. 帮某人度过难关</div></div></li></ul>",
+      "css": ".ds-list { margin: 0; padding: 0; list-style: none; overflow: hidden; border-radius: var(--radius-card, 14px); background: var(--color-panel, #fff); } .ds-li { display: flex; align-items: center; min-height: 56px; padding: 12px 16px; border-bottom: 1px solid var(--color-line, #e5e5e7); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; } .ds-li:last-child { border-bottom: none; } .ds-li-main { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; } .ds-li-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; } .ds-hw { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; color: var(--color-ink, #1d1d1f); } .ds-due { flex-shrink: 0; font-size: 11px; color: var(--color-muted, #6e6e73); } .ds-due.ds-new { color: var(--color-accent-ink, #0063cc); } .ds-mn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--color-muted, #6e6e73); } .ds-missing { font-size: 11px; color: var(--color-muted, #6e6e73); }"
+    },
+    {
+      "name": "Switch & Segmented Control",
+      "kind": "custom",
+      "description": "设置页的两类状态控件。选中态一律墨色反白（与 chip 的 aria-pressed 同一套语言），不靠 1px 底色差表达“当前选中”；开关的关闭态轨道用雾灰而不是发丝灰，否则开关等于隐形。",
+      "html": "<div class=\"ds-controls\"><div class=\"ds-seg\" role=\"group\" aria-label=\"口音\"><button class=\"ds-seg-item ds-on\" aria-pressed=\"true\">美音</button><button class=\"ds-seg-item\" aria-pressed=\"false\">英音</button></div><button class=\"ds-switch\" role=\"switch\" aria-checked=\"true\" aria-label=\"翻面自动朗读\"><span class=\"ds-track\"><span class=\"ds-knob\"></span></span></button><button class=\"ds-switch\" role=\"switch\" aria-checked=\"false\" aria-label=\"其他开关\"><span class=\"ds-track\"><span class=\"ds-knob\"></span></span></button></div>",
+      "css": ".ds-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; } .ds-seg { display: inline-flex; padding: 2px; border: 1px solid var(--color-line, #e5e5e7); border-radius: 999px; background: var(--color-bg, #f5f5f7); } .ds-seg-item { min-height: 44px; padding: 0 12px; border: none; border-radius: 999px; background: transparent; color: var(--color-muted, #6e6e73); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 14px; cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-seg-item.ds-on { background: var(--color-ink, #1d1d1f); color: var(--color-bg, #f5f5f7); font-weight: 600; } .ds-seg-item:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-switch { display: grid; place-items: center; width: 48px; height: 44px; padding: 0; border: none; background: transparent; cursor: pointer; } .ds-track { position: relative; display: block; width: 40px; height: 24px; border-radius: 999px; background: var(--color-muted, #6e6e73); transition: background-color 150ms; } .ds-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 999px; background: var(--color-panel, #fff); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); transition: left 150ms; } .ds-switch[aria-checked=\"true\"] .ds-track { background: var(--color-good-fg, #17693a); } .ds-switch[aria-checked=\"true\"] .ds-knob { left: 18px; } .ds-switch:focus-visible .ds-track { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
+    },
+    {
+      "name": "Confirm Sheet",
+      "kind": "custom",
+      "description": "所有破坏性操作唯一的面板，不用 window.confirm。贴底、先说影响面再给按钮：标题 → 便签色块里的数量 → 不可逆说明 → 安全动作（主按钮）→ 破坏动作（ghost 危险字）。打开时焦点落在安全按钮，Esc 等同点了它。",
+      "html": "<div class=\"ds-sheet\"><h2 class=\"ds-sheet-title\">删除记录预览</h2><div class=\"ds-sheet-notice\"><p>涉及 3 条记录</p><p>删除 9 张卡 · 41 条复习记录</p><p class=\"ds-sheet-msg\">这些记录及其全部卡片、复习记录将永久删除，不可撤销。</p></div><div class=\"ds-sheet-actions\"><button class=\"ds-sheet-safe\">取消操作</button><button class=\"ds-sheet-danger\">确认删除 3 条记录</button></div></div>",
+      "css": ".ds-sheet { padding: 16px 16px 20px; border-top: 1px solid var(--color-line, #e5e5e7); border-radius: var(--radius-card, 14px) var(--radius-card, 14px) 0 0; background: var(--color-panel, #fff); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.1); } .ds-sheet-title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.25; color: var(--color-ink, #1d1d1f); } .ds-sheet-notice { margin-top: 12px; padding: 12px; border: 1px solid var(--color-notice-line, #ffe2a8); border-radius: var(--radius-field, 12px); background: var(--color-notice-bg, #fff8e6); } .ds-sheet-notice p { margin: 0; font-size: 14px; color: var(--color-notice-fg, #8a5a00); } .ds-sheet-msg { margin-top: 4px !important; } .ds-sheet-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; } .ds-sheet-safe { display: inline-flex; align-items: center; justify-content: center; height: 50px; border: none; border-radius: var(--radius-card, 14px); background: var(--color-accent, #0071e3); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 150ms; } .ds-sheet-safe:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 88%, #000); } .ds-sheet-danger { height: 44px; border: none; border-radius: var(--radius-card, 14px); background: transparent; color: var(--color-again-fg, #c0392b); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 15px; cursor: pointer; } .ds-sheet-safe:focus-visible, .ds-sheet-danger:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
     },
     {
       "name": "Grade Bar",
       "kind": "custom",
       "refersTo": "grade-button",
-      "description": "四档打分条：忘了 / 困难 / 记得 / 简单，每格带预计间隔。系统里唯一的彩色事件。",
+      "description": "四档打分条：忘了 / 困难 / 记得 / 简单，每格带预计间隔。系统里唯一的彩色事件；间隔数字不用透明度压淡，它必须在自己的薄涂上达到 4.5:1。",
       "html": "<div class=\"ds-grades\"><button class=\"ds-g ds-g1\"><span>忘了</span><small>10 分钟</small></button><button class=\"ds-g ds-g2\"><span>困难</span><small>2 天</small></button><button class=\"ds-g ds-g3\"><span>记得</span><small>5 天</small></button><button class=\"ds-g ds-g4\"><span>简单</span><small>12 天</small></button></div>",
-      "css": ".ds-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } .ds-g { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 52px; padding: 9px 4px; border: none; border-radius: var(--radius-field, 12px); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-g small { margin-top: 2px; font-size: 10px; font-weight: 400; opacity: 0.75; } .ds-g:hover { filter: brightness(0.97); } .ds-g:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; } .ds-g1 { background: var(--color-again-bg, #ffe5e3); color: var(--color-again-fg, #c0392b); } .ds-g2 { background: var(--color-hard-bg, #fff0d6); color: var(--color-hard-fg, #b7791f); } .ds-g3 { background: var(--color-good-bg, #e3f6e8); color: var(--color-good-fg, #1e8449); } .ds-g4 { background: var(--color-easy-bg, #e8f4fd); color: var(--color-easy-fg, #0071e3); }"
+      "css": ".ds-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } .ds-g { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 52px; padding: 9px 4px; border: none; border-radius: var(--radius-field, 12px); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-g small { margin-top: 2px; font-size: 11px; font-weight: 400; } .ds-g:hover { filter: brightness(0.97); } .ds-g:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; } .ds-g1 { background: var(--color-again-bg, #ffe5e3); color: var(--color-again-fg, #c0392b); } .ds-g2 { background: var(--color-hard-bg, #fff0d6); color: var(--color-hard-fg, #7d5200); } .ds-g3 { background: var(--color-good-bg, #e3f6e8); color: var(--color-good-fg, #17693a); } .ds-g4 { background: var(--color-easy-bg, #e8f4fd); color: var(--color-easy-fg, #0063cc); }"
     },
     {
       "name": "Review Card Front",
       "kind": "custom",
       "refersTo": "card",
-      "description": "复习正面（英→中）：11px 大写提示、30/700 词头、雾灰音标与 44px 圆形发音按钮，整体居中。",
+      "description": "复习正面（英→中）：11px 提示词、30/700 词头、雾灰音标与 44px 圆形发音按钮，整体居中。卡面上唯一可点的是发音按钮。",
       "html": "<div class=\"ds-front\"><div class=\"ds-front-label\">这个词什么意思</div><div class=\"ds-front-word\">concern</div><div class=\"ds-front-ipa\"><span>/kənˈsɜːrn/</span><button class=\"ds-play\" aria-label=\"播放发音\">▶</button></div></div>",
-      "css": ".ds-front { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; } .ds-front-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted, #86868b); } .ds-front-word { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-ink, #1d1d1f); } .ds-front-ipa { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--color-muted, #86868b); } .ds-play { display: grid; place-items: center; width: 44px; height: 44px; border: none; border-radius: 999px; background: var(--color-easy-bg, #e8f4fd); color: var(--color-accent, #0071e3); font-size: 14px; cursor: pointer; transition: background-color 150ms; } .ds-play:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-accent, #0071e3)); } .ds-play:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
+      "css": ".ds-front { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; } .ds-front-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--color-muted, #6e6e73); } .ds-front-word { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-ink, #1d1d1f); } .ds-front-ipa { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--color-muted, #6e6e73); } .ds-play { display: grid; place-items: center; width: 44px; height: 44px; border: none; border-radius: 999px; background: var(--color-easy-bg, #e8f4fd); color: var(--color-easy-fg, #0063cc); font-size: 14px; cursor: pointer; transition: background-color 150ms; } .ds-play:hover { background: color-mix(in srgb, var(--color-easy-bg, #e8f4fd) 82%, var(--color-easy-fg, #0063cc)); } .ds-play:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; }"
     },
     {
       "name": "Tab Bar",
       "kind": "nav",
       "refersTo": "tab-bar",
-      "description": "三项底部导航：今日 / 卡片 / 设置。24px 圆角色块图标，当前项整组变蓝。",
-      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-active\"><span class=\"ds-tab-icon\"></span>今日</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"></span>卡片</a><a class=\"ds-tab\"><span class=\"ds-tab-icon\"></span>设置</a></nav>",
-      "css": ".ds-tabs { display: flex; justify-content: space-around; height: 49px; padding-top: 8px; border-top: 1px solid var(--color-line, #e5e5e7); background: color-mix(in srgb, var(--color-panel, #fff) 95%, transparent); backdrop-filter: blur(12px); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 10px; } .ds-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; color: var(--color-muted, #86868b); text-decoration: none; cursor: pointer; } .ds-tab-icon { width: 24px; height: 24px; border-radius: 6px; background: var(--color-line, #e5e5e7); } .ds-tab.ds-active { color: var(--color-accent, #0071e3); } .ds-tab.ds-active .ds-tab-icon { background: var(--color-accent, #0071e3); } .ds-tab:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; border-radius: 6px; }"
-    },
-    {
-      "name": "Build FAB",
-      "kind": "custom",
-      "refersTo": "fab",
-      "description": "首页唯一的悬浮元素：52×52 圆形 + 信号蓝色调阴影。系统里仅有的两处阴影之一。",
-      "html": "<button class=\"ds-fab\" aria-label=\"建卡\">+</button>",
-      "css": ".ds-fab { display: grid; place-items: center; width: 52px; height: 52px; border: none; border-radius: 999px; background: var(--color-accent, #0071e3); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 30px; line-height: 1; box-shadow: 0 10px 15px -3px rgba(0, 113, 227, 0.35), 0 4px 6px -4px rgba(0, 113, 227, 0.35); cursor: pointer; transition: background-color 150ms; } .ds-fab:hover { background: color-mix(in srgb, var(--color-accent, #0071e3) 88%, #000); } .ds-fab:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 3px; }"
+      "description": "三项底部导航：今日 / 卡片 / 设置。手绘 24×24、1.6 描边的 SVG 图标跟 currentColor；当前项用 accent-ink 并加粗，未选中是雾灰——发丝灰当“未选中”只有 1.2:1，等于没有状态。三个 tab 居中于 448px 列。",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-active\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"4\" y=\"3.5\" width=\"13\" height=\"17\" rx=\"3\"></rect><path d=\"M18.5 7.5c1 .5 1.5 1.4 1.5 2.6v8.3a2.1 2.1 0 0 1-2.1 2.1H9.2\"></path></svg><span>今日</span></a><a class=\"ds-tab\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"5\" rx=\"2\"></rect><path d=\"M4 12.5h16M5.5 17h13\"></path></svg><span>卡片</span></a><a class=\"ds-tab\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 8.5h11M18 8.5h3M3 15.5h5M12 15.5h9\"></path><circle cx=\"16\" cy=\"8.5\" r=\"1.8\"></circle><circle cx=\"10\" cy=\"15.5\" r=\"1.8\"></circle></svg><span>设置</span></a></nav>",
+      "css": ".ds-tabs { display: flex; justify-content: space-around; padding: 8px 8px 0; border-top: 1px solid var(--color-line, #e5e5e7); background: color-mix(in srgb, var(--color-panel, #fff) 95%, transparent); font-family: -apple-system, BlinkMacSystemFont, \"PingFang SC\", sans-serif; font-size: 11px; } .ds-tab { display: flex; position: relative; min-height: 56px; width: 64px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--color-muted, #6e6e73); text-decoration: none; cursor: pointer; } .ds-tab.ds-active { color: var(--color-accent-ink, #0063cc); font-weight: 600; } .ds-tab:focus-visible { outline: 2px solid var(--color-accent, #0071e3); outline-offset: 2px; border-radius: 6px; }"
     }
   ],
   "narrative": {
@@ -359,6 +389,11 @@
         "section": "colors"
       },
       {
+        "name": "The 4.5:1 Rule",
+        "body": "任何要读的字（含 10–14px 的次要文字、占位符、间隔预览）在自己的实际底色上 ≥ 4.5:1，图标与图形 ≥ 3:1。为此雾灰不能回到 #86868b，四档前景不能回到更浅的那一版，蓝色文字不能退回 accent，间隔预览不能用 opacity 把数字压淡——那是评分时唯一告诉用户“明天会怎样”的数字。",
+        "section": "colors"
+      },
+      {
         "name": "The Size-Not-Color Rule",
         "body": "层级由字号与字重建立；颜色只表达状态（可操作、次要、警示、评分档位）。把一段正文变灰只能因为它确实次要，不能为了让标题更突出。",
         "section": "typography"
@@ -375,12 +410,12 @@
       },
       {
         "name": "The Thumb Zone Rule",
-        "body": "主操作永远在底部：翻面、四档打分、保存、继续/今天到这。顶部只放低频或退出的动作（关闭、撤销、编辑、设置）。",
+        "body": "主操作永远在底部：翻面、四档打分、保存、继续/今天到这、批量删除、确认面板的两个动作。顶部只放低频或退出的动作（关闭、设置）。撤销与编辑跟着评分条站，因为它们紧跟在“打错一档”之后。批量管理的两条动作（编辑卡片类型 / 删除 N 条记录）走一条固定在 tab bar 上方的底栏，展开的卡型编辑与预览以贴底面板叠在它上方（max-height: 62dvh，内容内滚）；列表再长也不用到顶上去点。",
         "section": "layout"
       },
       {
         "name": "The Flat-By-Default Rule",
-        "body": "静止状态下的表面一律扁平。阴影是\"浮起来\"的证据，不是\"重要\"的装饰；除 FAB 与浮动提示外，任何卡片、按钮、输入框出现阴影都算错误。",
+        "body": "静止状态下的表面一律扁平。阴影是“浮起来”的证据，不是“重要”的装饰；除 FAB、浮动提示与贴底批量面板外，任何卡片、按钮、输入框出现阴影都算错误。",
         "section": "elevation"
       },
       {
@@ -398,13 +433,14 @@
       "Do 保留四档打分与挖空高亮作为界面里唯一的彩色事件。"
     ],
     "donts": [
-      "Don't 给卡片、按钮、输入框加阴影——阴影只属于 FAB 与浮动提示条。",
+      "Don't 给卡片、按钮、输入框加阴影——阴影只属于 FAB、浮动提示条与贴底批量面板。",
       "Don't 引入第二强调色、渐变、彩色插画或图标字体；需要区分时用底色层级与字号。",
       "Don't 用纯色大块做评分按钮，也不要让 Memory Tints 溢出到卡片或正文。",
       "Don't 发明第四个圆角值（只用 14 / 12 / 10 / pill）。",
       "Don't 加 3D 翻面、弹跳、骨架屏或页面切换动画；状态过渡只有 150ms 的颜色变化与开关滑动。",
       "Don't 为桌面加双栏、侧边栏或放大字号——窗口变宽只增加留白。",
-      "Don't 把提醒条做成错误：温和提醒用 Caution Paper（便签感），只有真正的失败才用 again-fg 文字。"
+      "Don't 把提醒条做成错误：温和提醒用 Caution Paper（便签感），只有真正的失败才用 again-fg 文字。",
+      "Don't 用 window.confirm / alert / prompt 做确认：它会把 origin 印进弹窗，也拿不到数量与后果。删除、覆盖、丢弃草稿一律走 ConfirmSheet。"
     ]
   }
 }

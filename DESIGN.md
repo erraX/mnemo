@@ -5,6 +5,9 @@ colors:
   # 强调
   primary: "#0071e3"
   primary-night: "#0a84ff"
+  # 蓝字专用：面用 #0071e3 压在自己的浅底或冷纸白上只有 4.2–4.3:1，字要深一档
+  accent-ink: "#0063cc"
+  accent-ink-night: "#4da3ff"
   on-accent: "#ffffff"
   # 中性（浅色）
   neutral-bg: "#f5f5f7"
@@ -97,10 +100,9 @@ typography:
     letterSpacing: "0.08em"
   micro:
     fontFamily: '-apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif'
-    fontSize: "10px"
+    fontSize: "11px"
     fontWeight: 400
     lineHeight: 1.4
-    letterSpacing: "0.05em"
 rounded:
   card: "14px"
   field: "12px"
@@ -132,14 +134,14 @@ components:
     typography: "{typography.body-sm}"
   button-secondary:
     backgroundColor: "{colors.easy-bg}"
-    textColor: "{colors.primary}"
+    textColor: "{colors.accent-ink}"
     rounded: "{rounded.card}"
     height: "50px"
     padding: "0 20px"
     typography: "{typography.body}"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.primary}"
+    textColor: "{colors.accent-ink}"
     rounded: "{rounded.card}"
     height: "44px"
     padding: "0 16px"
@@ -278,7 +280,7 @@ Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系�
 
 单列、手机优先。内容容器 `max-w-md`（448px）水平居中，屏幕左右内边距 16px，卡片之间 12px，卡片内部 14px。所有间距落在 4pt 网格上（4 / 8 / 12 / 16 / 20 / 24 / 28）。
 
-页面骨架：`min-h-dvh` + `paddingTop: calc(env(safe-area-inset-top) + 12px)` + 底部 `pb-28`（112px，让内容避开 tab bar 加安全区）。tab bar 固定底部、`bg-panel/95` 加背景模糊、`paddingBottom: calc(env(safe-area-inset-bottom) + 8px)`；内容高名义 49px（24 图标 + 4 间距 + 10px 文字 + 上下 8px 内边距，实测约 58px），三个 tab 居中于 448px 列（`mx-auto max-w-md`），窗口再宽也不拉开。建卡 FAB 固定 `bottom: calc(env(safe-area-inset-bottom) + 76px)`、52×52，并对齐内容列的右边缘（`mx-auto max-w-md px-4` 的容器内 `justify-end`）——它不能贴在视口右侧飘离内容。
+页面骨架：`min-h-dvh` + `paddingTop: calc(env(safe-area-inset-top) + 12px)` + 底部 `pb-28`（112px，让内容避开 tab bar 加安全区）。tab bar 固定底部、`bg-panel/95` 加背景模糊、`paddingBottom: calc(env(safe-area-inset-bottom) + 8px)`；内容高名义 49px（24 图标 + 4 间距 + 11px 文字 + 上下 8px 内边距，实测约 58px），三个 tab 居中于 448px 列（`mx-auto max-w-md`），窗口再宽也不拉开。建卡 FAB 固定 `bottom: calc(env(safe-area-inset-bottom) + 76px)`、52×52，并对齐内容列的右边缘（`mx-auto max-w-md px-4` 的容器内 `justify-end`）——它不能贴在视口右侧飘离内容。
 
 复习屏是唯一的例外：全屏、无 tab bar、卡片垂直居中于剩余空间，顶部只有一条轻量状态栏（关闭 / 剩余数），底部是评分区加撤销与编辑——回答错了要够得着，所以它们不在顶栏。建卡与编辑是全屏 sheet：sticky 头部（取消 / 标题 / 保存）加单列字段流，字段之间 8px，比列表页更紧，因为这是一次性填完的表单。
 
@@ -305,7 +307,7 @@ Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系�
 - **Sheet Panel** (`0 -10px 15px -3px rgba(0,0,0,0.1)`): 只给贴底的批量卡型编辑/预览面板，让"它是从下面升上来的"成立；向上的偏移是它与普通卡片唯一的区别。
 
 ### Named Rules
-**The Flat-By-Default Rule.** 静止状态下的表面一律扁平。阴影是"浮起来"的证据，不是"重要"的装饰；除 FAB 与浮动提示外，任何卡片、按钮、输入框出现阴影都算错误。
+**The Flat-By-Default Rule.** 静止状态下的表面一律扁平。阴影是"浮起来"的证据，不是"重要"的装饰；除 FAB、浮动提示与贴底批量面板外，任何卡片、按钮、输入框出现阴影都算错误。
 
 ## Shapes
 
@@ -325,8 +327,8 @@ Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系�
 ### Buttons
 - **Shape:** 卡片圆角 14px（`14px`），无阴影、无描边。
 - **Primary:** Signal Blue 底 + 纯白字，`lg` 高 50px / 内边距 `0 20px` / 16px 600，`md` 高 44px / `0 16px` / 15px 600。用于"开始复习"、"看答案"、"继续"、"回到首页"。
-- **Secondary:** Sky Wash 底 + Signal Blue 字，尺寸同 primary。用于"再学 10 张新卡"、"重试"、"全选搜索结果"、"编辑卡片类型"。它是"另一个可选动作"，不是"取消"。
-- **Ghost:** 透明底 + Signal Blue 字，高 44px。用于设置页入口、sheet 头部的取消/保存、批量管理里的低频动作。
+- **Secondary:** Sky Wash 底 + Signal Blue Ink 字，尺寸同 primary。用于"再学 10 张新卡"、"重试"、"全选搜索结果"、"编辑卡片类型"。它是"另一个可选动作"，不是"取消"。
+- **Ghost:** 透明底 + Signal Blue Ink 字，高 44px。用于设置页入口、sheet 头部的取消/保存、批量管理里的低频动作。
 - **Destructive:** 不新增颜色，用 ghost 变体加 `again-fg` 文字（"删除单词"、"覆盖并恢复"）。永远不做实心珊瑚底按钮：`again-fg` 在深色下变 `#ff6961`，白字压上去只有 2.8:1。
 - **Disabled:** `opacity: 0.4`，不改颜色、不改形状。但**理由不能住在禁用按钮里**："为什么不能保存"要写成按钮外面的一行 `text-muted`，因为 40% 透明的字读不清。按钮标签在禁用时收短（`保存` 而不是 `保存 · 生成 0 张卡`）。
 - **Hover / Focus:** 手机优先，没有 hover 态；键盘焦点统一由 `:focus-visible` 画 2px `accent` 环（`offset: 2px`），鼠标点击不出现。`outline-none` 不得单独使用。
@@ -383,7 +385,7 @@ Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系�
 ### Signature: 复习卡面与评分条
 系统最独特的组件，值得单独描述。正面按卡型分三种：`zh2en` 是 24px/600 的释义全文加 11px 大写提示"说出英文"；`cloze` 是 19px 原句，挖空处为蓝色下划线空白，下挂 12px 来源；`en2zh` 是 30px/700 词头 + 雾灰音标 + 44px 圆形发音按钮，整体居中。背面是完整记录：30px 词头、音标与发音、16px 释义、全部例句（目标词为荧光笔黄高亮）、标签。
 
-评分条是四等分的网格（gap 8px），每个按钮高 52px、圆角 12px、主标签 14px/600、下方 10px 的预计间隔（`opacity: 0.75`）。四档颜色即 Memory Tints，顺序固定：忘了 / 困难 / 记得 / 简单。翻面前只给一个"看答案"主按钮加一行 12px 雾灰提示"想好了再翻"。
+评分条是四等分的网格（gap 8px），每个按钮高 52px、圆角 12px、主标签 14px/600、下方 11px 的预计间隔（不压透明度，它要在自己的薄涂上保持 4.5:1）。四档颜色即 Memory Tints，顺序固定：忘了 / 困难 / 记得 / 简单。翻面前只给一个"看答案"主按钮加一行 12px 雾灰提示"想好了再翻"。
 
 背面例句在**没有挖空区间时也要标出目标词**（`ClozeText` 的 `target`，荧光笔黄）；否则 en2zh 卡片的答案在句子里完全没标记，与"目标词为荧光笔黄高亮"的承诺不符。
 
@@ -400,7 +402,7 @@ Mnemo 是一叠随身带着、每天抽几张的卡。这个隐喻决定了系�
 - **Do** 保留四档打分与挖空高亮作为界面里唯一的彩色事件。
 
 ### Don't:
-- **Don't** 给卡片、按钮、输入框加阴影——阴影只属于 FAB 与浮动提示条。
+- **Don't** 给卡片、按钮、输入框加阴影——阴影只属于 FAB、浮动提示条与贴底批量面板。
 - **Don't** 引入第二强调色、渐变、彩色插画或图标字体；需要区分时用底色层级与字号。
 - **Don't** 用纯色大块做评分按钮，也不要让 Memory Tints 溢出到卡片或正文。
 - **Don't** 发明第四个圆角值（只用 14 / 12 / 10 / pill）。

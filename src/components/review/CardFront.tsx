@@ -3,7 +3,7 @@ import { primaryClozeExample } from '@/lib/cardTypes'
 import { ClozeText } from '@/components/ClozeText'
 
 function Label({ children }: { children: string }) {
-  return <div className="text-[11px] uppercase tracking-[0.08em] text-muted">{children}</div>
+  return <div className="text-[11px] font-medium uppercase text-muted">{children}</div>
 }
 
 export function PlayButton({ onPlay, className = '' }: { onPlay: () => void; className?: string }) {
