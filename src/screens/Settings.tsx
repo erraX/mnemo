@@ -53,6 +53,26 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
 
   const setNew = (n: number) => void updateSettings(db, { newCardsPerDay: Math.min(MAX_NEW, Math.max(MIN_NEW, n)) })
 
+  // 云端收集的地址与令牌：只在点「保存」时落库，避免半截输入就生效
+  const [cloudUrl, setCloudUrl] = useState(settings.cloud?.url ?? '')
+  const [cloudToken, setCloudToken] = useState(settings.cloud?.token ?? '')
+  const [cloudMsg, setCloudMsg] = useState<string | undefined>(undefined)
+  const cloudDirty = cloudUrl.trim() !== (settings.cloud?.url ?? '') || cloudToken.trim() !== (settings.cloud?.token ?? '')
+
+  async function saveCloud() {
+    const url = cloudUrl.trim().replace(/\/+$/, '')
+    const token = cloudToken.trim()
+    if (!url && !token) {
+      await updateSettings(db, { cloud: undefined })
+      setCloudMsg(undefined)
+      return
+    }
+    if (!/^https?:\/\//.test(url)) { setCloudMsg('地址要以 https:// 开头'); return }
+    if (!token) { setCloudMsg('令牌不能为空'); return }
+    await updateSettings(db, { cloud: { url, token } })
+    setCloudMsg(undefined)
+  }
+
   async function setAccent(accent: Accent) {
     if (accent === settings.accent) return
     await updateSettings(db, { accent })
@@ -172,6 +192,44 @@ export function Settings({ shareDeps }: { shareDeps?: ShareDeps }) {
           <div className={`px-4 py-2 text-sm ${msg.tone === 'ok' ? 'text-good-fg' : msg.tone === 'error' ? 'text-again-fg' : 'text-muted'}`} role="status">{msg.text}</div>
         )}
         <p className="px-4 pb-3 text-xs text-muted">备份会打开系统分享面板，选「存储到文件」放进 iCloud Drive。恢复会先告诉你备份里有多少条记录，再开始覆盖。</p>
+      </Group>
+
+      <Group title="云端收集">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[15px]">状态</span>
+            <span className={`text-xs ${settings.cloud ? 'text-muted' : 'text-muted'}`}>{settings.cloud ? '已连接云端收集' : '未配置'}</span>
+          </div>
+          <label className="mt-2 block text-xs text-muted" htmlFor="cloud-url">云端地址</label>
+          <input
+            id="cloud-url"
+            aria-label="云端地址"
+            inputMode="url"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="https://mnemo-xxx.example.workers.dev"
+            className="mt-1 w-full rounded-(--radius-field) bg-bg px-3 py-2 text-base text-ink placeholder:text-muted"
+            value={cloudUrl}
+            onChange={(e) => setCloudUrl(e.target.value)}
+          />
+          <label className="mt-2 block text-xs text-muted" htmlFor="cloud-token">云端令牌</label>
+          <input
+            id="cloud-token"
+            aria-label="云端令牌"
+            type="password"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="与 Worker 的 TOKEN 一致"
+            className="mt-1 w-full rounded-(--radius-field) bg-bg px-3 py-2 text-base text-ink placeholder:text-muted"
+            value={cloudToken}
+            onChange={(e) => setCloudToken(e.target.value)}
+          />
+          {cloudMsg && <p role="alert" className="mt-2 text-xs text-again-fg">{cloudMsg}</p>}
+          <Button variant="secondary" className="mt-3 w-full" disabled={!cloudDirty} onClick={() => void saveCloud()}>保存云端收集</Button>
+          <p className="mt-2 text-xs text-muted">快捷指令把词收到云端，Mnemo 打开时自动取回：带释义的词直接建卡，其余进收集箱。令牌只存在本机，换掉 Worker 的 TOKEN 后这里要同步更新。</p>
+        </div>
       </Group>
 
       <Group title="关于">

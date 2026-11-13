@@ -118,4 +118,36 @@ describe('Settings', () => {
     expect(screen.getByText(/ts-fsrs/)).toBeTruthy()
     expect(screen.getByRole('link', { name: /Spike 1/ })).toBeTruthy()
   })
+
+  it('saves cloud capture url and token, then requires both to stay connected', async () => {
+    renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
+    const url = await screen.findByLabelText('云端地址')
+    const token = screen.getByLabelText('云端令牌')
+
+    fireEvent.change(url, { target: { value: 'https://cf.example' } })
+    fireEvent.change(token, { target: { value: 't0k' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存云端收集' }))
+    await waitFor(async () => expect((await getSettings(db)).cloud).toEqual({ url: 'https://cf.example', token: 't0k' }))
+    expect(await screen.findByText('已连接云端收集')).toBeTruthy()
+
+    fireEvent.change(token, { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存云端收集' }))
+    expect(await screen.findByText('令牌不能为空')).toBeTruthy()
+    expect((await getSettings(db)).cloud).toEqual({ url: 'https://cf.example', token: 't0k' })
+
+    // 两个都清空才等于关闭：一次误清不会默默把配置抹掉
+    fireEvent.change(screen.getByLabelText('云端地址'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存云端收集' }))
+    await waitFor(async () => expect((await getSettings(db)).cloud).toBeUndefined())
+    expect(await screen.findByText('未配置')).toBeTruthy()
+  })
+
+  it('rejects a url that is not http(s) instead of storing it', async () => {
+    renderWithRouter(<Settings />, { route: '/settings', path: '/settings' })
+    fireEvent.change(await screen.findByLabelText('云端地址'), { target: { value: 'cf.example' } })
+    fireEvent.change(screen.getByLabelText('云端令牌'), { target: { value: 't0k' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存云端收集' }))
+    expect(await screen.findByText('地址要以 https:// 开头')).toBeTruthy()
+    expect((await getSettings(db)).cloud).toBeUndefined()
+  })
 })
