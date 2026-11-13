@@ -272,7 +272,9 @@ export async function getTodayCounts(db: MnemoDB, now = Date.now()): Promise<{ d
   return { due: p.learning.length + p.review.length, fresh: p.fresh.length }
 }
 
-export async function addDrafts(db: MnemoDB, lines: Array<{ raw: string; kind: DraftKind }>, now = Date.now()): Promise<Draft[]> {
+export async function addDrafts(
+  db: MnemoDB, lines: Array<{ raw: string; kind: DraftKind; origin?: Draft['origin'] }>, now = Date.now(),
+): Promise<Draft[]> {
   return db.transaction('rw', db.drafts, async () => {
     const existing = new Set((await db.drafts.toArray()).map((d) => d.raw.toLowerCase()))
     const fresh: Draft[] = []
@@ -280,7 +282,7 @@ export async function addDrafts(db: MnemoDB, lines: Array<{ raw: string; kind: D
       const key = l.raw.toLowerCase()
       if (existing.has(key)) return
       existing.add(key)
-      fresh.push({ id: crypto.randomUUID(), raw: l.raw, kind: l.kind, createdAt: now + i })
+      fresh.push({ id: crypto.randomUUID(), raw: l.raw, kind: l.kind, origin: l.origin, createdAt: now + i })
     })
     if (fresh.length) await db.drafts.bulkAdd(fresh)
     return fresh

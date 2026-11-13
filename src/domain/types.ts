@@ -82,6 +82,8 @@ export interface Draft {
   id: string
   raw: string
   kind: 'headword' | 'sentence'
+  /** 云端收集拉下来的草稿标记，收集箱分组展示用 */
+  origin?: 'cloud'
   createdAt: number
 }
 
@@ -100,6 +102,12 @@ export interface DictEntry {
 
 export type Accent = 'us' | 'uk'
 
+/** 云端收集箱的接入点：Worker 基地址 + 长随机令牌 */
+export interface CloudConfig {
+  url: string
+  token: string
+}
+
 export interface Settings {
   id: 'settings'
   newCardsPerDay: number
@@ -108,6 +116,10 @@ export interface Settings {
   lastEnabledTypes: CardType[]
   lastBackupAt?: number
   dictVersion?: string
+  /** 云端收集：Worker 地址与令牌，未配置时不存在 */
+  cloud?: CloudConfig
+  /** 最近一次成功拉取云端收集箱的时刻 */
+  lastCloudPullAt?: number
   /** "再学 10 张新卡"：某学习日的额外新卡额度 */
   extraNew?: { dayStart: number; count: number }
 }
