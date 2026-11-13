@@ -1,11 +1,23 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "computedHash": "f60a2c3688379b7a306b3a7b8dd4120eab39da44c74fa2cb62d6424935f04aa7"
+    },
+    "prototype": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/prototype/SKILL.md",
+      "computedHash": "1e3ba2202a5b77b8aa50bc4447432331d6e42590e53ec0935689662cfed199ca"
+    },
     "show-me": {
       "source": "humanlayer/skills",
       "sourceType": "github",
       "skillPath": "plugins/show-me/skills/show-me/SKILL.md",
-      "computedHash": "43766f53afe7eb9feba0bb7716590c35cbb8d39d4a91eddef50e9566a6f6ae19"
+      "computedHash": "0904362ca0f13fc69d88822bb1e7a72f27fd80b992b57ef89ef8a12c3fecce35"
     }
   }
 }
