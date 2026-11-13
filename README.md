@@ -23,6 +23,7 @@ Mockup：`docs/mockups/mnemo-mockups.html`
 - 发音：有道在线 TTS + Service Worker 离线缓存，失败降级系统 TTS
 - 卡片管理：勾选单词、全选搜索结果或整个词库，批量启用/关闭卡片类型，或删除单词；预览影响数量后确认
 - 导入：Vocably CSV / TSV 预览后追加，已有词跳过，不改复习进度
+- 云端采集（可选）：快捷指令收词到自建 Cloudflare Worker，打开 Mnemo 自动取回并建卡
 - 备份：导出 JSON 到系统分享面板（存 iCloud Drive），从文件恢复
 - 离线：PWA，加到主屏后无网可用
 
@@ -41,6 +42,22 @@ Mockup：`docs/mockups/mnemo-mockups.html`
 - **清空词库后重新导入**：选择整个词库 → 删除单词 → 核对预览 → 确认删除。只删除单词及其卡片、复习记录，不清空收集箱、词典或设置。重新导入仍按现有导入规则自动生成卡片类型。
 
 **删除不可撤销，建议先在设置中导出备份。** 所有批量修改整批成功或整批回滚；预览后所选数据有变化会要求重新预览。现有数据未记录导入来源，不能自动只选择 Vocably 导入的单词。
+
+## 云端采集（可选，需自建 Worker）
+
+看到生词时不必先打开 Mnemo：在 Mac 或 iPhone 上把词（可带原句）交给快捷指令，它先查词典给你看释义，确认后提交到一个自建的 Cloudflare Worker；Mnemo 打开或回到前台时自动取回。带释义的词直接建卡，其余进收集箱。
+
+自建步骤（只需一次）：
+
+1. `npx wrangler login`，然后 `npx wrangler d1 create mnemo`，把返回的 `database_id` 填进 `worker/wrangler.toml`。
+2. `npx wrangler d1 execute mnemo --remote --file=worker/schema.sql` 建表。
+3. `pnpm sync-dict` 生成 SQL，再按提示 `wrangler d1 execute` 把词典导进 D1。
+4. `npx wrangler secret put TOKEN`（值用 `openssl rand -hex 32`），然后 `npx wrangler deploy`。
+5. 把 Worker 地址和同一个 TOKEN 填到 Mnemo 的 **设置 → 云端收集**。
+
+快捷指令用两个请求就能写完：`GET {地址}/lookup?word=…` 拿释义，`POST {地址}/inbox`（body 放 `word` / `meaning` / `sentence`）提交；两者都带 `Authorization: Bearer <token>`。云端只存还没取走的内容，取回写入本地后立即删除；复习数据始终只在本机。
+
+推 `main` 时 `.github/workflows/worker.yml` 会部署 Worker（需仓库 secret：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`MNEMO_CLOUD_TOKEN`）。
 
 ## 从 Vocably 导入
 
