@@ -25,10 +25,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+      - name: Push worker secret
+        working-directory: worker
+        # TOKEN 走 secret（不落成可见的 var），每次部署都重推一次保证与仓库 secret 一致
+        run: echo "$MNEMO_CLOUD_TOKEN" | npx wrangler@4 secret put TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MNEMO_CLOUD_TOKEN: ${{ secrets.MNEMO_CLOUD_TOKEN }}
       - name: Deploy
         working-directory: worker
-        # TOKEN 用仓库 secret 覆盖：wrangler secret put 是一次性的，CI 里每次部署都要带
-        run: npx wrangler@4 deploy --var TOKEN:${{ secrets.MNEMO_CLOUD_TOKEN }}
+        run: npx wrangler@4 deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -13,7 +13,8 @@
     "typecheck": "tsc -b",
     "build:dict": "tsx scripts/build-dict.ts",
     "sync-dict": "tsx scripts/sync-dict.ts",
-    "worker:dev": "npx wrangler@4 dev --config worker/wrangler.toml"
+    "worker:dev": "npx wrangler@4 dev --config worker/wrangler.toml",
+    "worker:deploy": "npx wrangler@4 deploy --config worker/wrangler.toml"
   },
   "dependencies": {
     "csv-parse": "^7.0.3",

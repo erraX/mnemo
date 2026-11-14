@@ -1,0 +1,2 @@
+# 本地开发用（wrangler dev 自动读取）。复制成 .dev.vars 后填值，不要提交。
+TOKEN=local-dev-token

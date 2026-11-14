@@ -4,3 +4,5 @@ dist/
 dev-dist/
 .cache/
 *.local
+.dev.vars
+.wrangler/
