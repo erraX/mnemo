@@ -137,6 +137,24 @@ describe('pullCloudInbox', () => {
     expect((await getSettings(db)).lastCloudPullAt).toBe(NOW)
   })
 
+  it('缺 id 的脏条目被忽略，也不会污染删除请求', async () => {
+    const db = createTestDb()
+    const calls: Call[] = []
+    stubFetch([
+      (c) => (c.url === 'https://cf.example/inbox' && c.method === 'GET' ? jsonResponse({ items: [
+        { word: 'no-id', meaning: '无 id', createdAt: NOW },
+        { id: 'ok', word: 'ephemeral', meaning: 'adj. 短暂的', createdAt: NOW },
+      ] }) : undefined),
+      (c) => (c.url === 'https://cf.example/inbox/delete' ? jsonResponse({ ok: true }) : undefined),
+    ], calls)
+
+    const result = await pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)
+
+    expect(result.fetched).toBe(1)
+    expect(await db.notes.count()).toBe(1)
+    expect(JSON.parse(calls[1]?.body ?? '{}')).toEqual({ ids: ['ok'] })
+  })
+
   it('重复内容幂等跳过（大小写不敏感），但仍从云端删除', async () => {
     const db = createTestDb()
     await importNotes(db, [{ headword: 'ephemeral', meaning: '旧释义', examples: [], tags: [], enabledTypes: ['zh2en'] }], NOW)

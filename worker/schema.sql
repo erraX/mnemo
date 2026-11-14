@@ -1,5 +1,5 @@
 -- 云端采集 Worker 的 D1 schema
--- 应用：npx wrangler d1 execute mnemo --remote --file=worker/schema.sql
+-- 应用：npx wrangler@4 d1 execute mnemo --remote --file=worker/schema.sql
 -- 词典数据由 scripts/sync-dict.ts 导入（不要手写 dict 行）。
 
 CREATE TABLE IF NOT EXISTS dict (

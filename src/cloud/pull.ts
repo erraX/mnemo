@@ -39,22 +39,31 @@ export class CloudNetworkError extends Error {
   }
 }
 
-export async function pullCloudInbox(db: MnemoDB, cfg: CloudConfig, now = Date.now()): Promise<PullResult> {
+/** 统一的请求层：401/403 归为令牌问题，其余失败归为网络问题，调用方只关心内容 */
+async function cloudRequest(
+  cfg: CloudConfig, path: string, init: RequestInit = {}, networkMessage?: string,
+): Promise<Response> {
   let res: Response
   try {
-    res = await fetch(`${cfg.url}/inbox`, { headers: { authorization: `Bearer ${cfg.token}` } })
+    res = await fetch(`${cfg.url}${path}`, { ...init, headers: { authorization: `Bearer ${cfg.token}`, ...init.headers } })
   } catch {
-    throw new CloudNetworkError()
+    throw new CloudNetworkError(networkMessage)
   }
   if (res.status === 401 || res.status === 403) throw new CloudAuthError()
-  if (!res.ok) throw new CloudNetworkError(`云端返回 ${res.status}`)
+  if (!res.ok) throw new CloudNetworkError(networkMessage ?? `云端返回 ${res.status}`)
+  return res
+}
+
+export async function pullCloudInbox(db: MnemoDB, cfg: CloudConfig, now = Date.now()): Promise<PullResult> {
+  const res = await cloudRequest(cfg, '/inbox')
   let data: { items?: CloudItem[] }
   try {
     data = (await res.json()) as { items?: CloudItem[] }
   } catch {
     throw new CloudNetworkError('云端响应不是合法 JSON')
   }
-  const items = data.items ?? []
+  // 只认带 id 的条目：删除要靠它，缺了就会变成永远清不掉的脏数据
+  const items = (data.items ?? []).filter((i): i is CloudItem => typeof i?.id === 'string')
   const settings = await getSettings(db)
 
   const inputs: NoteInput[] = []
@@ -79,18 +88,12 @@ export async function pullCloudInbox(db: MnemoDB, cfg: CloudConfig, now = Date.n
 
   const ids = items.map((i) => i.id)
   if (ids.length > 0) {
-    let del: Response
-    try {
-      del = await fetch(`${cfg.url}/inbox/delete`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${cfg.token}` },
-        body: JSON.stringify({ ids }),
-      })
-    } catch {
-      throw new CloudNetworkError('内容已收下，但云端没清掉；下次会自动重试')
-    }
-    if (del.status === 401 || del.status === 403) throw new CloudAuthError()
-    if (!del.ok) throw new CloudNetworkError('内容已收下，但云端没清掉；下次会自动重试')
+    await cloudRequest(
+      cfg,
+      '/inbox/delete',
+      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ids }) },
+      '内容已收下，但云端没清掉；下次会自动重试',
+    )
   }
   await updateSettings(db, { lastCloudPullAt: now })
   return { fetched: items.length, direct: inputs.length - skipped, drafts: added.length, duplicates: skipped }

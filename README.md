@@ -49,10 +49,10 @@ Mockup：`docs/mockups/mnemo-mockups.html`
 
 自建步骤（只需一次）：
 
-1. `npx wrangler login`，然后 `npx wrangler d1 create mnemo`，把返回的 `database_id` 填进 `worker/wrangler.toml`。
-2. `npx wrangler d1 execute mnemo --remote --file=worker/schema.sql` 建表。
-3. `pnpm sync-dict` 生成 SQL，再按提示 `wrangler d1 execute` 把词典导进 D1。
-4. `npx wrangler secret put TOKEN`（值用 `openssl rand -hex 32`），然后 `npx wrangler deploy`。
+1. `npx wrangler@4 login`，然后 `npx wrangler@4 d1 create mnemo`，把返回的 `database_id` 填进 `worker/wrangler.toml`。
+2. `npx wrangler@4 d1 execute mnemo --remote --file=worker/schema.sql` 建表。
+3. `pnpm sync-dict` 生成 SQL，再按提示 `npx wrangler@4 d1 execute` 把词典导进 D1。
+4. `npx wrangler@4 secret put TOKEN`（值用 `openssl rand -hex 32`），然后 `npx wrangler@4 deploy`。
 5. 把 Worker 地址和同一个 TOKEN 填到 Mnemo 的 **设置 → 云端收集**。
 
 快捷指令用两个请求就能写完：`GET {地址}/lookup?word=…` 拿释义，`POST {地址}/inbox`（body 放 `word` / `meaning` / `sentence`）提交；两者都带 `Authorization: Bearer <token>`。云端只存还没取走的内容，取回写入本地后立即删除；复习数据始终只在本机。
