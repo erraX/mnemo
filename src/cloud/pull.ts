@@ -39,6 +39,14 @@ export class CloudNetworkError extends Error {
   }
 }
 
+/** 本地已收下内容，但云端删除失败；下次拉取会去重并重试删除 */
+export class CloudCleanupError extends CloudNetworkError {
+  constructor() {
+    super('内容已收下，但云端没清掉；下次同步会重试，不会重复建卡')
+    this.name = 'CloudCleanupError'
+  }
+}
+
 /** 统一的请求层：401/403 归为令牌问题，其余失败归为网络问题，调用方只关心内容 */
 async function cloudRequest(
   cfg: CloudConfig, path: string, init: RequestInit = {}, networkMessage?: string,
@@ -88,12 +96,16 @@ export async function pullCloudInbox(db: MnemoDB, cfg: CloudConfig, now = Date.n
 
   const ids = items.map((i) => i.id)
   if (ids.length > 0) {
-    await cloudRequest(
-      cfg,
-      '/inbox/delete',
-      { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ids }) },
-      '内容已收下，但云端没清掉；下次会自动重试',
-    )
+    try {
+      await cloudRequest(
+        cfg,
+        '/inbox/delete',
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ids }) },
+      )
+    } catch (e) {
+      if (e instanceof CloudNetworkError) throw new CloudCleanupError()
+      throw e
+    }
   }
   await updateSettings(db, { lastCloudPullAt: now })
   return { fetched: items.length, direct: inputs.length - skipped, drafts: added.length, duplicates: skipped }

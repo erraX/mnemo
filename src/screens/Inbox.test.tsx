@@ -12,7 +12,7 @@ beforeEach(async () => {
   await db.open()
   await db.dict.put({ word: 'concern', phonetic: '', translation: 'n. 担忧', forms: ['concerns'] })
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('Inbox', () => {
   it('splits pasted lines into drafts with kinds and dictionary status', async () => {
@@ -72,6 +72,29 @@ describe('Inbox', () => {
     fireEvent.click(await screen.findByRole('button', { name: '立即同步' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
     expect(await screen.findByText(/云端没有新的/)).toBeTruthy()
+  })
+
+  it('建卡成功但云端删除受限时明确告知已保存、待重试，且不会重复建卡', async () => {
+    await updateSettings(db, { cloud: { url: 'https://cf.example', token: 't0k' } })
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL) =>
+      String(input).endsWith('/inbox/delete')
+        ? new Response('D1 write limit exceeded', { status: 500 })
+        : new Response(JSON.stringify({ items: [
+          { id: 'cloud-1', word: 'mnemo-smoke-second', meaning: '第二次联通测试', createdAt: 1 },
+        ] }), { status: 200, headers: { 'content-type': 'application/json' } }),
+    ))
+    renderWithRouter(<Inbox />, { route: '/inbox', path: '/inbox' })
+
+    fireEvent.click(await screen.findByRole('button', { name: '立即同步' }))
+    expect(await screen.findByText(/内容已收下，但云端没清掉/)).toBeTruthy()
+    expect(screen.getByText('待清理云端')).toBeTruthy()
+    expect(screen.queryByText('还没同步过')).toBeNull() // 已保存，不要同时宣称一次同步都没发生
+    expect(await db.notes.count()).toBe(1)
+    expect(screen.queryByRole('link', { name: /设置/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '立即同步' }))
+    await waitFor(() => expect(screen.getByText(/内容已收下，但云端没清掉/)).toBeTruthy())
+    expect(await db.notes.count()).toBe(1)
   })
 
   it('surfaces a 401 as a token problem with a link to settings', async () => {

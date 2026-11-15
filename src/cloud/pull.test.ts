@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTestDb } from '@/test/db'
 import { addDrafts, getSettings, importNotes } from '@/db/repo'
-import { pullCloudInbox, CloudAuthError, CloudNetworkError, type CloudItem } from './pull'
+import { pullCloudInbox, CloudAuthError, CloudCleanupError, CloudNetworkError, type CloudItem } from './pull'
 
 const NOW = new Date(2026, 10, 13, 12).getTime()
 
@@ -119,7 +119,7 @@ describe('pullCloudInbox', () => {
       (c) => (c.url === 'https://cf.example/inbox/delete' ? jsonResponse({ error: 'boom' }, 500) : undefined),
     ], [])
 
-    await expect(pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)).rejects.toBeInstanceOf(CloudNetworkError)
+    await expect(pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)).rejects.toBeInstanceOf(CloudCleanupError)
     expect(await db.notes.count()).toBe(1) // 已写入的不回滚
 
     await expect(pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)).rejects.toBeInstanceOf(CloudNetworkError)

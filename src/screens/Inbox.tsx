@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router'
 import { db } from '@/db/db'
 import { addDrafts, deleteDraft, getSettings } from '@/db/repo'
-import { CloudAuthError, pullCloudInbox } from '@/cloud/pull'
+import { CloudAuthError, CloudCleanupError, CloudNetworkError, pullCloudInbox } from '@/cloud/pull'
 import { DEFAULT_SETTINGS, type Draft } from '@/domain/types'
 import { lookupWord } from '@/lib/dict'
 import { splitPaste } from '@/lib/inbox'
@@ -56,7 +56,7 @@ export function Inbox() {
   const [pendingDelete, setPendingDelete] = useState<Draft | undefined>(undefined)
   const [deleting, setDeleting] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [syncMsg, setSyncMsg] = useState<{ text: string; tone: 'ok' | 'error' } | undefined>(undefined)
+  const [syncMsg, setSyncMsg] = useState<{ text: string; tone: 'ok' | 'error' | 'pending'; needsSettings?: boolean } | undefined>(undefined)
 
   const cloudDrafts = drafts.filter((d) => d.origin === 'cloud')
   const localDrafts = drafts.filter((d) => d.origin !== 'cloud')
@@ -73,7 +73,13 @@ export function Inbox() {
       if (r.duplicates) parts.push(`${r.duplicates} 条重复跳过`)
       setSyncMsg({ text: r.fetched === 0 ? '云端没有新的' : parts.join(' · '), tone: 'ok' })
     } catch (e) {
-      setSyncMsg({ text: e instanceof CloudAuthError ? '令牌无效，需要到设置里更新' : '连不上云端，稍后再试', tone: 'error' })
+      if (e instanceof CloudAuthError) {
+        setSyncMsg({ text: '令牌无效，需要到设置里更新', tone: 'error', needsSettings: true })
+      } else if (e instanceof CloudCleanupError) {
+        setSyncMsg({ text: e.message, tone: 'pending' })
+      } else {
+        setSyncMsg({ text: e instanceof CloudNetworkError ? e.message : '同步未完成，请稍后重试', tone: 'error' })
+      }
     } finally {
       setSyncing(false)
     }
@@ -124,18 +130,20 @@ export function Inbox() {
         <section className="rounded-(--radius-card) bg-panel p-3.5" aria-label="云端收集">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-[15px] font-semibold">云端收集</h2>
-            <span className={`text-xs ${syncMsg?.tone === 'error' ? 'text-again-fg' : 'text-muted'}`}>
-              {settings.cloud ? (syncing ? '正在同步…' : syncMsg?.tone === 'error' ? '同步失败' : '已连接') : '尚未配置云端收集'}
+            <span className={`text-xs ${syncMsg?.tone === 'error' ? 'text-again-fg' : syncMsg?.tone === 'pending' ? 'text-notice-fg' : 'text-muted'}`}>
+              {settings.cloud ? (syncing ? '正在同步…' : syncMsg?.tone === 'pending' ? '待清理云端' : syncMsg?.tone === 'error' ? '同步失败' : '已连接') : '尚未配置云端收集'}
             </span>
           </div>
-          <p className="mt-1 text-xs text-muted">
-            {settings.cloud
-              ? settings.lastCloudPullAt
-                ? `上次同步 ${new Date(settings.lastCloudPullAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
-                : '还没同步过'
-              : '在快捷指令里收词；到设置里填写地址与令牌'}
-          </p>
-          {syncMsg && <p className={`mt-1 text-xs ${syncMsg.tone === 'error' ? 'text-again-fg' : 'text-good-fg'}`} role="status">{syncMsg.text}</p>}
+          {syncMsg?.tone !== 'pending' && (
+            <p className="mt-1 text-xs text-muted">
+              {settings.cloud
+                ? settings.lastCloudPullAt
+                  ? `上次同步 ${new Date(settings.lastCloudPullAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+                  : '还没同步过'
+                : '在快捷指令里收词；到设置里填写地址与令牌'}
+            </p>
+          )}
+          {syncMsg && <p className={`mt-1 text-xs ${syncMsg.tone === 'error' ? 'text-again-fg' : syncMsg.tone === 'pending' ? 'text-notice-fg' : 'text-good-fg'}`} role="status">{syncMsg.text}</p>}
           {settings.cloud ? (
             <Button variant="secondary" className="mt-2 w-full" disabled={syncing} onClick={() => void sync()}>
               {syncing ? '同步中…' : '立即同步'}
@@ -143,7 +151,7 @@ export function Inbox() {
           ) : (
             <Link to="/settings" className="mt-2 flex min-h-11 items-center justify-center text-sm font-semibold text-accent-ink">去设置</Link>
           )}
-          {syncMsg?.tone === 'error' && (
+          {syncMsg?.needsSettings && (
             <Link to="/settings" className="mt-1 block text-center text-xs text-accent-ink">到设置检查云端收集</Link>
           )}
         </section>
