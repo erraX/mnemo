@@ -2,7 +2,7 @@
  * 把 public/dict 里的 ECDICT 子集导入 D1，供 Worker 的 /lookup 使用。
  *
  * 用法（需已 `npx wrangler@4 login`，并在 worker/wrangler.toml 填好 database_id）：
- *   npx wrangler@4 d1 execute mnemo --remote --file=worker/schema.sql
+ *   npx wrangler@4 d1 execute mnemo --remote --config worker/wrangler.toml --file=worker/schema.sql
  *   node --experimental-strip-types scripts/sync-dict.ts --dry-run   # 先看条数与体积
  *   node --experimental-strip-types scripts/sync-dict.ts             # 生成 SQL 并提示导入命令
  *
@@ -56,7 +56,7 @@ async function main(): Promise<void> {
   await mkdir('.cache', { recursive: true })
   await writeFile('.cache/dict-import.sql', sql)
   console.log('已写入 .cache/dict-import.sql，导入：')
-  console.log('  npx wrangler@4 d1 execute mnemo --remote --file=.cache/dict-import.sql')
+  console.log('  npx wrangler@4 d1 execute mnemo --remote --config worker/wrangler.toml --file=.cache/dict-import.sql')
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

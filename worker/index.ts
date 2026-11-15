@@ -1,3 +1,5 @@
+import { createD1Store, type D1Database } from './d1'
+
 /**
  * 云端采集 Worker：词典查询 + 收集箱中转。
  *
@@ -110,8 +112,15 @@ export async function handle(req: Request, env: Env): Promise<Response> {
   return json({ error: 'not found' }, 404)
 }
 
+/** Cloudflare 运行时给的是原生 D1 绑定；handle 使用的是 Store 接口。 */
+export interface WorkerBindings {
+  DB: D1Database
+  TOKEN: string
+}
+
 export default {
-  fetch: (req: Request, env: Env) => handle(req, env),
+  fetch: (req: Request, bindings: WorkerBindings) =>
+    handle(req, { DB: createD1Store(bindings.DB), TOKEN: bindings.TOKEN }),
 }
 
 /** 测试与本地开发用的内存实现；行为与 D1 适配器一致（含变形反查） */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMemoryStore, handle, type Env } from './index'
+import worker, { createMemoryStore, handle, type Env, type WorkerBindings } from './index'
 
 const TOKEN = 'secret-token'
 
@@ -10,6 +10,25 @@ function req(path: string, init: RequestInit = {}, token = TOKEN): Request {
 }
 
 const env = (): Env => ({ DB: createMemoryStore(), TOKEN })
+
+describe('worker: Cloudflare 入口', () => {
+  it('模拟 Cloudflare D1 绑定经默认 fetch 入口可查词，而不是把 D1 当作 Store 调用', async () => {
+    // Cloudflare 注入的 DB 是 D1Database（只有 prepare/batch/exec），不是内存 Store。
+    const runtimeEnv = {
+      TOKEN,
+      DB: {
+        prepare: (_sql: string) => ({
+          bind: (_word: string) => ({
+            first: async () => ({ word: 'ephemeral', phonetic: 'ipa', translation: '短暂的', forms: '[]' }),
+          }),
+        }),
+      },
+    }
+    const res = await worker.fetch(req('/lookup?word=ephemeral'), runtimeEnv as unknown as WorkerBindings)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ found: true, word: 'ephemeral', translation: '短暂的' })
+  })
+})
 
 describe('worker: 认证', () => {
   it('缺少或错误的 token 一律返回 401 且不读写任何数据', async () => {

@@ -49,15 +49,15 @@ Mockup：`docs/mockups/mnemo-mockups.html`
 
 自建步骤（只需一次）：
 
-1. `npx wrangler@4 login`，然后 `npx wrangler@4 d1 create mnemo`，把返回的 `database_id` 填进 `worker/wrangler.toml`。
-2. `npx wrangler@4 d1 execute mnemo --remote --file=worker/schema.sql` 建表。
-3. `pnpm sync-dict` 生成 SQL，再按提示 `npx wrangler@4 d1 execute` 把词典导进 D1。
-4. `npx wrangler@4 secret put TOKEN`（值用 `openssl rand -hex 32`），然后 `npx wrangler@4 deploy`。
+1. `npx wrangler@4 login`，然后 `npx wrangler@4 d1 create mnemo`，把返回的 `database_id` 填进 `worker/wrangler.toml`。这个 ID **不是密钥**，需要提交到仓库，GitHub Actions 才能绑定同一个库。
+2. `npx wrangler@4 d1 execute mnemo --remote --config worker/wrangler.toml --file=worker/schema.sql` 建表。
+3. `pnpm sync-dict` 生成 SQL，再按提示用 `npx wrangler@4 d1 execute mnemo --remote --config worker/wrangler.toml --file=.cache/dict-import.sql` 把词典导进 D1。
+4. `npx wrangler@4 secret put TOKEN --config worker/wrangler.toml`（令牌值用 `openssl rand -hex 32` 生成，不要贴到聊天或提交到仓库），然后 `pnpm worker:deploy`。
 5. 把 Worker 地址和同一个 TOKEN 填到 Mnemo 的 **设置 → 云端收集**。
 
 快捷指令用两个请求就能写完：`GET {地址}/lookup?word=…` 拿释义，`POST {地址}/inbox`（body 放 `word` / `meaning` / `sentence`）提交；两者都带 `Authorization: Bearer <token>`。云端只存还没取走的内容，取回写入本地后立即删除；复习数据始终只在本机。
 
-推 `main` 时 `.github/workflows/worker.yml` 会部署 Worker（需仓库 secret：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`MNEMO_CLOUD_TOKEN`）。
+推 `main` 时 `.github/workflows/worker.yml` 会部署 Worker（需仓库 secret：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`MNEMO_CLOUD_TOKEN`）。令牌若泄露，重新运行 `secret put TOKEN`，同步更新 GitHub 的 `MNEMO_CLOUD_TOKEN` 与 Mnemo 设置中的令牌；不要在命令行参数或 URL 中放令牌。
 
 ## 从 Vocably 导入
 
