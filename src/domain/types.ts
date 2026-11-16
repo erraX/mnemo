@@ -118,8 +118,10 @@ export interface Settings {
   dictVersion?: string
   /** 云端收集：Worker 地址与令牌，未配置时不存在 */
   cloud?: CloudConfig
-  /** 最近一次成功拉取云端收集箱的时刻 */
+  /** 最近一次成功拉取云端收集箱的时刻（包含空轮询） */
   lastCloudPullAt?: number
+  /** 最近一次真正收下新内容的摘要；空轮询或重复条目不覆盖 */
+  lastCloudReceipt?: { at: number; direct: number; drafts: number; duplicates: number }
   /** "再学 10 张新卡"：某学习日的额外新卡额度 */
   extraNew?: { dayStart: number; count: number }
 }

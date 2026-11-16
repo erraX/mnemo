@@ -121,6 +121,7 @@ describe('pullCloudInbox', () => {
 
     await expect(pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)).rejects.toBeInstanceOf(CloudCleanupError)
     expect(await db.notes.count()).toBe(1) // 已写入的不回滚
+    expect((await getSettings(db)).lastCloudReceipt).toBeUndefined() // 云端未清理前不报成功
 
     await expect(pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)).rejects.toBeInstanceOf(CloudNetworkError)
     expect(await db.notes.count()).toBe(1) // 重拉靠去重兑底，不重复建卡
@@ -135,6 +136,30 @@ describe('pullCloudInbox', () => {
     ], [])
     await pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)
     expect((await getSettings(db)).lastCloudPullAt).toBe(NOW)
+  })
+
+  it('自动收取成功留下可见摘要，随后手动空拉取不会抹掉它', async () => {
+    const db = createTestDb()
+    const item: CloudItem = { id: 'i1', word: 'ephemeral', meaning: '短暂的', createdAt: NOW - 1000 }
+    let pending = true
+    stubFetch([
+      (c) => (c.url === 'https://cf.example/inbox' && c.method === 'GET'
+        ? jsonResponse({ items: pending ? [item] : [] }) : undefined),
+      (c) => {
+        if (c.url !== 'https://cf.example/inbox/delete') return undefined
+        pending = false
+        return jsonResponse({ ok: true, deleted: 1 })
+      },
+    ], [])
+
+    await pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW)
+    expect((await getSettings(db)).lastCloudReceipt).toMatchObject({ at: NOW, direct: 1, drafts: 0 })
+
+    expect(await pullCloudInbox(db, { url: 'https://cf.example', token: 't0k' }, NOW + 60_000)).toMatchObject({ fetched: 0 })
+    const settings = await getSettings(db)
+    expect(settings.lastCloudPullAt).toBe(NOW + 60_000)
+    expect(settings.lastCloudReceipt).toMatchObject({ at: NOW, direct: 1, drafts: 0 })
+    expect(await db.notes.count()).toBe(1)
   })
 
   it('缺 id 的脏条目被忽略，也不会污染删除请求', async () => {
@@ -176,6 +201,7 @@ describe('pullCloudInbox', () => {
     expect(note?.meaning).toBe('旧释义') // 不覆盖已有释义
     expect(await db.notes.count()).toBe(1)
     expect(await db.drafts.count()).toBe(1) // 不重复入草稿
+    expect((await getSettings(db)).lastCloudReceipt).toBeUndefined() // 只跳过重复不算新收取
     expect(JSON.parse(calls[1]?.body ?? '{}').ids).toEqual(['d1', 'd2'])
   })
 })

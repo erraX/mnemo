@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { HashRouter, Route, Routes } from 'react-router'
 import { db } from '@/db/db'
-import { updateSettings } from '@/db/repo'
+import { getSettings, updateSettings } from '@/db/repo'
+import { useCloudPull } from '@/app/useCloudPull'
 import { renderWithRouter } from '@/test/render'
 import { Inbox } from './Inbox'
 
@@ -95,6 +96,30 @@ describe('Inbox', () => {
     fireEvent.click(screen.getByRole('button', { name: '立即同步' }))
     await waitFor(() => expect(screen.getByText(/内容已收下，但云端没清掉/)).toBeTruthy())
     expect(await db.notes.count()).toBe(1)
+  })
+
+  it('自动收下并建卡后，即使手动空拉取也能看到上次收取结果', async () => {
+    await updateSettings(db, { cloud: { url: 'https://cf.example', token: 't0k' } })
+    let cloudHasItem = true
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
+      if (String(input).endsWith('/inbox/delete')) {
+        cloudHasItem = false
+        return new Response('{"ok":true,"deleted":1}', { status: 200 })
+      }
+      return new Response(JSON.stringify({ items: cloudHasItem
+        ? [{ id: 'cloud-1', word: 'mnemo-automatic-test', meaning: '自动收取测试', createdAt: 1 }]
+        : [] }), { status: 200, headers: { 'content-type': 'application/json' } })
+    }))
+    function AutoPull() { useCloudPull(); return null }
+    render(<AutoPull />)
+    await waitFor(async () => expect((await getSettings(db)).lastCloudPullAt).toBeTypeOf('number'))
+    expect(await db.notes.count()).toBe(1)
+
+    renderWithRouter(<Inbox />, { route: '/inbox', path: '/inbox' })
+    expect(await screen.findByText(/上次收取.*新建 1 条记录/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '立即同步' }))
+    expect(await screen.findByText('云端没有新的')).toBeTruthy()
+    expect(screen.getByText(/上次收取.*新建 1 条记录/)).toBeTruthy()
   })
 
   it('surfaces a 401 as a token problem with a link to settings', async () => {

@@ -107,6 +107,12 @@ export async function pullCloudInbox(db: MnemoDB, cfg: CloudConfig, now = Date.n
       throw e
     }
   }
-  await updateSettings(db, { lastCloudPullAt: now })
-  return { fetched: items.length, direct: inputs.length - skipped, drafts: added.length, duplicates: skipped }
+  const result = { fetched: items.length, direct: inputs.length - skipped, drafts: added.length, duplicates: skipped }
+  await updateSettings(db, {
+    lastCloudPullAt: now,
+    ...(result.direct + result.drafts > 0
+      ? { lastCloudReceipt: { at: now, direct: result.direct, drafts: result.drafts, duplicates: result.duplicates } }
+      : {}),
+  })
+  return result
 }

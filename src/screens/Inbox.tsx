@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { db } from '@/db/db'
 import { addDrafts, deleteDraft, getSettings } from '@/db/repo'
 import { CloudAuthError, CloudCleanupError, CloudNetworkError, pullCloudInbox } from '@/cloud/pull'
-import { DEFAULT_SETTINGS, type Draft } from '@/domain/types'
+import { DEFAULT_SETTINGS, type Draft, type Settings } from '@/domain/types'
 import { lookupWord } from '@/lib/dict'
 import { splitPaste } from '@/lib/inbox'
 import { Button } from '@/components/ui/Button'
@@ -24,6 +24,14 @@ function badge(d: Draft, dict: DictStatus | undefined): { text: string; cls: str
   if (d.kind === 'sentence') return { text: '待指定', cls: 'bg-hard-bg text-hard-fg' }
   if (dict === 'hit') return { text: '可直接存', cls: 'bg-good-bg text-good-fg' }
   return { text: '待补全', cls: 'bg-hard-bg text-hard-fg' }
+}
+
+function receiptLine(receipt: NonNullable<Settings['lastCloudReceipt']>): string {
+  const parts = [receipt.direct ? `新建 ${receipt.direct} 条记录` : '', receipt.drafts ? `${receipt.drafts} 条进收集箱` : ''].filter(Boolean)
+  const when = new Date(receipt.at).toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  })
+  return `上次收取 ${when} · ${parts.join(' · ')}`
 }
 
 function DraftList({ drafts, dict, onDelete }: { drafts: Draft[]; dict: Record<string, DictStatus>; onDelete: (d: Draft) => void }) {
@@ -56,7 +64,7 @@ export function Inbox() {
   const [pendingDelete, setPendingDelete] = useState<Draft | undefined>(undefined)
   const [deleting, setDeleting] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [syncMsg, setSyncMsg] = useState<{ text: string; tone: 'ok' | 'error' | 'pending'; needsSettings?: boolean } | undefined>(undefined)
+  const [syncMsg, setSyncMsg] = useState<{ text: string; tone: 'ok' | 'error' | 'pending'; needsSettings?: boolean; received?: boolean } | undefined>(undefined)
 
   const cloudDrafts = drafts.filter((d) => d.origin === 'cloud')
   const localDrafts = drafts.filter((d) => d.origin !== 'cloud')
@@ -71,7 +79,7 @@ export function Inbox() {
       if (r.direct) parts.push(`${r.direct} 个词已直接建卡`)
       if (r.drafts) parts.push(`${r.drafts} 条进了收集箱`)
       if (r.duplicates) parts.push(`${r.duplicates} 条重复跳过`)
-      setSyncMsg({ text: r.fetched === 0 ? '云端没有新的' : parts.join(' · '), tone: 'ok' })
+      setSyncMsg({ text: r.fetched === 0 ? '云端没有新的' : parts.join(' · '), tone: 'ok', received: r.direct + r.drafts > 0 })
     } catch (e) {
       if (e instanceof CloudAuthError) {
         setSyncMsg({ text: '令牌无效，需要到设置里更新', tone: 'error', needsSettings: true })
@@ -134,12 +142,14 @@ export function Inbox() {
               {settings.cloud ? (syncing ? '正在同步…' : syncMsg?.tone === 'pending' ? '待清理云端' : syncMsg?.tone === 'error' ? '同步失败' : '已连接') : '尚未配置云端收集'}
             </span>
           </div>
-          {syncMsg?.tone !== 'pending' && (
+          {syncMsg?.tone !== 'pending' && !syncMsg?.received && (
             <p className="mt-1 text-xs text-muted">
               {settings.cloud
-                ? settings.lastCloudPullAt
-                  ? `上次同步 ${new Date(settings.lastCloudPullAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
-                  : '还没同步过'
+                ? settings.lastCloudReceipt
+                  ? receiptLine(settings.lastCloudReceipt)
+                  : settings.lastCloudPullAt
+                    ? `上次同步 ${new Date(settings.lastCloudPullAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+                    : '还没同步过'
                 : '在快捷指令里收词；到设置里填写地址与令牌'}
             </p>
           )}
